@@ -8,7 +8,9 @@ import { useRouter } from "next/navigation";
 interface AppProviderType {
     login: (email: string, password: string) => Promise<void>,
     register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
-    isLoading: boolean
+    isLoading: boolean,
+    authToken: string | null,
+    logout: () => void
 }
 
 const AppContext = createContext<AppProviderType | undefined>(undefined)
@@ -18,28 +20,32 @@ export const AppProvider = ({
 }: {
     children: React.ReactNode;
 }) => {
-    const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [authToken, setAuthToken] = useState<string|null>(null)
+    const [isLoading, setIsLoading] = useState<boolean>(true)
+    const [authToken, setAuthToken] = useState<string | null>(null)
     const router = useRouter()
-    useEffect(()=>{
+    useEffect(() => {
         const token = Cookies.get("authToken")
         if (token) {
             setAuthToken(token);
         } else {
-            router.push("/auth")
+            router.push("/auth");
         }
+        setIsLoading(false);
     })
     const login = async (email: string, password: string) => {
         setIsLoading(true)
         try {
+            setIsLoading(true);
             const response = await axios.post(`${API_URL}/login`, { email, password })
             console.log(response)
+
             if (response.data.status) {
-                Cookies.set("authToken", response.data.token, {expires:7});
+                Cookies.set("authToken", response.data.token, { expires: 7 });
                 setAuthToken(response.data.token);
                 router.push("/dashboard");
                 console.log("beres")
                 toast.success("Login succesful");
+                setIsLoading(false)
             } else {
                 toast.error("Invalid login details");
             }
@@ -53,16 +59,23 @@ export const AppProvider = ({
         setIsLoading(true)
         try {
             const response = await axios.post(`${API_URL}/register`, { name, email, password, password_confirmation })
-            console.log(response)
+            toast.success(response.data.message);
         } catch (error) {
+            toast.error("registration failed, username already exist");
             console.log(`Auth error: ${error}`)
         } finally {
             setIsLoading(false)
         }
     }
-
+    const logout = () => {
+        setAuthToken(null);
+        Cookies.remove("authToken");
+        setIsLoading(false);
+        toast.success("user logged out");
+        router.push("/auth")
+    }
     return (
-        <AppContext.Provider value={{ login, register, isLoading }}>
+        <AppContext.Provider value={{ login, register, isLoading, authToken, logout }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     )

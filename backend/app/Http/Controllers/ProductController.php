@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use PhpParser\Node\Stmt\TryCatch;
 
 class ProductController extends Controller
 {
@@ -13,7 +14,10 @@ class ProductController extends Controller
     public function index()
     {
         $user_id = auth()->user()->id;
-        $products = Product::where("user_id", $user_id)->get();
+        $products = Product::where("user_id", $user_id)->get()->map(function($product){
+            $product->banner_image = $product->banner_image ? asset("storage/" . $product->banner_image) : null;
+            return $product;
+        });
         return response()->json([
             "status" => true,
             "product" => $products
@@ -29,10 +33,15 @@ class ProductController extends Controller
             "title" => "required",
         ]);
 
+        $data["description"] = $request->description;
+        $data["cost"] = $request->cost;
+
+
         $data["user_id"] = auth()->user()->id;
         if($request->hasFile("banner_image")){
             $data["banner_image"] = $request->file("banner_image")->store("products", "public");
         }
+
 
         Product::create($data);
         return response()->json([
@@ -61,6 +70,10 @@ class ProductController extends Controller
         $request->validate([
             "title" => "required"
         ]);
+
+        $data["description"]=isset($request->description) ? $request->description : $product->description;
+        $data["cost"]=isset($request->cost) ? $request->cost : $product->cost;
+        $data["title"]=isset($request->title) ? $request->title : $product->title;
 
         if($request->hasFile("banner_image")){
             if($product->banner_image){

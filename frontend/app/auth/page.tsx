@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { myAppHook } from "@/context/AppProvider";
-import { register } from "module";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 interface formData {
     name?: string;
     email: string;
@@ -9,6 +10,7 @@ interface formData {
     password_confirmation?: string;
 }
 const Auth: React.FC = () => {
+    const router = useRouter();
     const [isLogin, setIsLogin] = useState<boolean>(true);
     const [formData, setFormData] = useState<formData>({
         name: "",
@@ -16,7 +18,13 @@ const Auth: React.FC = () => {
         password: "",
         password_confirmation: "",
     });
-    const { login, register } = myAppHook()
+    const { login, register, authToken, isLoading } = myAppHook();
+    useEffect(() => {
+        if (authToken) {
+            router.push("dashboard");
+            return;
+        }
+    }, [authToken, isLoading]);
     const handleOnChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
@@ -28,7 +36,7 @@ const Auth: React.FC = () => {
         if (isLogin) {
             try {
                 await login(formData.email, formData.password)
-            } catch (error) {
+             } catch (error) {
                 console.log(`Auth error: ${error}`)
             }
         }
