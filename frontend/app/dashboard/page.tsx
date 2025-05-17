@@ -98,7 +98,7 @@ const Dashboard: React.FC = () => {
                         fileRef.current.value = "";
                     }
                 }
-                
+                console.log(formData)
                 console.log(response)
             }
         } catch (error) {
