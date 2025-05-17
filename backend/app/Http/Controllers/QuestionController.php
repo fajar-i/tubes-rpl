@@ -41,7 +41,7 @@ class QuestionController extends Controller
         return response()->json([
             "status" => true,
             "message" => "question created succesfully",
-            "data" => $data
+            "questions" => $question->load('options')
         ]);
     }
 

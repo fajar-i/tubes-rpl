@@ -59,6 +59,7 @@ export default function EditorPage() {
 
   const handleAddQuestion = async () => {
     const newQuestion: Question = {
+      id: Date.now(),
       text: "Soal baru...",
       options: [
         { text: "Pilihan A" },
@@ -66,7 +67,6 @@ export default function EditorPage() {
         { text: "Pilihan C" },
       ],
     };
-    setQuestions((prev) => [...prev, newQuestion]);
 
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/questions/`, newQuestion, {
       headers: {
@@ -74,6 +74,8 @@ export default function EditorPage() {
         Authorization: `Bearer ${authToken}`
       }
     })
+    setQuestions((prev) => [...prev, response.data.questions]);
+    console.log(response.data.questions)
     toast.success(response.data.message);
   };
 
