@@ -8,7 +8,7 @@ export default function Home() {
         <div className="container">
             <h1 className="display-4 fw-bold">Welcome to My Next.js App</h1>
             <p className="lead">Build amazing things with Next.js & Bootstrap</p>
-            <Link href="/auth" className="btn btn-light btn-lg mt-3">Get Started</Link>
+            <Link href="/form" className="btn btn-light btn-lg mt-3">Get Started</Link>
         </div>
     </section>
 

@@ -14,6 +14,7 @@ interface ProductType {
     image_Url?: string | null,
     banner_image?: File | null
 }
+
 const Dashboard: React.FC = () => {
     const router = useRouter();
     const fileRef = React.useRef<HTMLInputElement>(null);

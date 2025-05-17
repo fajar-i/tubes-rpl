@@ -7,19 +7,20 @@ use Illuminate\Http\Request;
 
 class OptionController extends Controller
 {
+
     public function store(Request $request)
     {
-        $data = $request->validate([
-            "question_id" => "required|exists:questions,id",
-            "text" => "string|required"
+        $validated = $request->validate([
+            'question_id' => 'required|exists:questions,id',
+            'text'        => 'required|string',
         ]);
 
-        Options::create($data);
-        return response()->json([
-            "status" => true,
-            "message" => "option created succesfully"
-        ]);
+        $option = Options::create($validated);
+
+        // Kembalikan langsung $option, bukan dibungkus
+        return response()->json($option, 201);
     }
+
 
     public function update(Request $request, $id)
     {
@@ -30,13 +31,14 @@ class OptionController extends Controller
         $option->update(['text' => $request->input('text')]);
         return response()->json([
             "status" => true,
-            "message" => "question updated succesfully"
+            "message" => "question updated succesfully",
+            "option" => $option
         ]);
     }
 
-    public function destroy(Options $options)
+    public function destroy(Options $option)
     {
-        $options->delete();
+        $option->delete();
         return response()->json([
             "status" => true,
             "message" => "options deleted succesfully"

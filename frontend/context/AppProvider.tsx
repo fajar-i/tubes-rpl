@@ -10,6 +10,7 @@ interface AppProviderType {
     register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
     isLoading: boolean,
     authToken: string | null,
+    setIsLoading: (loading: boolean) => void,
     logout: () => void
 }
 
@@ -75,7 +76,7 @@ export const AppProvider = ({
         router.push("/auth")
     }
     return (
-        <AppContext.Provider value={{ login, register, isLoading, authToken, logout }}>
+        <AppContext.Provider value={{ login, register, isLoading, setIsLoading, authToken, logout }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     )

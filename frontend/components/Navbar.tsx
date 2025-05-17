@@ -19,8 +19,12 @@ const Navbar = () => {
                                 <Link className="nav-link" href="/dashboard">Dashboard</Link>
                             </li>
                             <li className="nav-item">
+                                <Link className="nav-link" href="/">Home</Link>
+                            </li>
+                            <li className="nav-item">
                                 <button className="btn btn-danger ms-2" onClick={logout}>Logout</button>
-                            </li></>
+                            </li>
+                            </>
                         ) : (
                             <>
                             <li className="nav-item">
