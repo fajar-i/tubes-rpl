@@ -38,13 +38,11 @@ export const AppProvider = ({
         try {
             setIsLoading(true);
             const response = await axios.post(`${API_URL}/login`, { email, password })
-            console.log(response)
 
             if (response.data.status) {
                 Cookies.set("authToken", response.data.token, { expires: 7 });
                 setAuthToken(response.data.token);
                 router.push("/dashboard");
-                console.log("beres")
                 toast.success("Login succesful");
                 setIsLoading(false)
             } else {

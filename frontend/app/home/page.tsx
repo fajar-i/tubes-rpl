@@ -1,5 +1,6 @@
 "use client"
 import { myAppHook } from "@/context/AppProvider"
+import Link from "next/link";
 export default function Home() {
     const { logout, authToken } = myAppHook();
     return <>
@@ -11,8 +12,6 @@ export default function Home() {
                     <p className="subtitle">
                         Evaluasi pembelajaran dengan mudah, cepat, dan empiris
                     </p>
-                    <br />
-                    <br />
                     <p className="description">
                         Proses analisis empiris dari soal ujianmu secara instan!<br />
                         Pastikan soal yang kamu gunakan telah memenuhi standar evaluasi
@@ -24,13 +23,9 @@ export default function Home() {
                         <>
                             <div className="hero-image">
                                 <img src="/lambang2.png" alt="Ilustrasi Analisis" />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
                                 <div className="cta-wrapper">
                                     <a href="/dokumentasi" className="cta-button">Dokumentasi</a>
-                                    <a href='http://github.com/fajar-i/tubes-rpl' target="_blank" rel="noopener noreferrer" className="cta-button" style={{ marginLeft: 'auto' }}>Source Code</a>
+                                    <a href= 'http://github.com/fajar-i/tubes-rpl' target="_blank" rel="noopener noreferrer" className="cta-button" style={{ marginLeft: 'auto' }}>Source Code</a>
                                 </div>
                             </div>
                         </>

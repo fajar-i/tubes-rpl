@@ -15,10 +15,6 @@ class QuestionController extends Controller
             "status" => true,
             "question" => $questions
         ]);
-        echo response()->json([
-            "status" => true,
-            "question" => $questions
-        ]);;
     }
 
     public function store(Request $request)

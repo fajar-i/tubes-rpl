@@ -43,7 +43,6 @@ const Dashboard: React.FC = () => {
                     Authorization: `Bearer ${authToken}`
                 }
             })
-            console.log(response)
             setProducts(response.data.product)
         } catch (error) {
             console.log("fetch all product error : " + error);
@@ -99,8 +98,6 @@ const Dashboard: React.FC = () => {
                         fileRef.current.value = "";
                     }
                 }
-                console.log(formData)
-                console.log(response)
             }
         } catch (error) {
             console.log(error);

@@ -8,27 +8,18 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import Swal from "sweetalert2";
 
-type Option = { id?: number; text: string };
+type Option = { id: number; text: string };
 type Question = {
-  id?: number;
+  id: number;
   text: string;
-  options?: Option[];
+  options: Option[];
 };
 
 export default function EditorPage() {
   const router = useRouter();
   const { authToken } = myAppHook();
   const [loading, setLoading] = useState(true);
-  const [questions, setQuestions] = useState<Question[]>([
-    {
-      text: "Soal baru...",
-      options: [
-        { text: "Pilihan A" },
-        { text: "Pilihan B" },
-        { text: "Pilihan C" },
-      ],
-    },
-  ]);
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -43,7 +34,6 @@ export default function EditorPage() {
   }, [authToken])
 
   const fetchAllQuestions = async () => {
-    // setIsLoading(true);
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/questions`, {
         headers: {
@@ -62,9 +52,9 @@ export default function EditorPage() {
       id: Date.now(),
       text: "Soal baru...",
       options: [
-        { text: "Pilihan A" },
-        { text: "Pilihan B" },
-        { text: "Pilihan C" },
+        { id: Date.now(), text: "Pilihan A" },
+        { id: Date.now(), text: "Pilihan B" },
+        { id: Date.now(), text: "Pilihan C" },
       ],
     };
 
@@ -75,7 +65,6 @@ export default function EditorPage() {
       }
     })
     setQuestions((prev) => [...prev, response.data.questions]);
-    console.log(response.data.questions)
     toast.success(response.data.message);
   };
 
@@ -115,8 +104,7 @@ export default function EditorPage() {
             options: q.options.map((o) =>
               o.id === oId ? { ...o, text: newText } : o
             ),
-          }
-          : q
+          } : q
       )
     );
 
@@ -158,7 +146,6 @@ export default function EditorPage() {
           : q
       )
     );
-
     // Panggil API untuk simpan opsi
     try {
       const response = await axios.post(
@@ -174,9 +161,7 @@ export default function EditorPage() {
           },
         }
       );
-
       const created: Option = response.data; // { id: realId, text: "Pilihan baru", question_id: qId }
-
       // 4. Replace temporary ID dengan ID asli dari server
       setQuestions((prev) =>
         prev.map((q) =>
@@ -192,13 +177,10 @@ export default function EditorPage() {
             : q
         )
       );
-
       toast.success("Opsi berhasil ditambahkan");
     } catch (e) {
       console.error(e);
       toast.error("Gagal menambah opsi");
-
-      // (opsional) rollback: ambil ulang data dari server
       fetchAllQuestions();
     }
   };
@@ -221,17 +203,10 @@ export default function EditorPage() {
             }
           })
           if (response.data.status) {
-            Swal.fire({
-              title: "Deleted!",
-              text: "Your file has been deleted.",
-              icon: "success"
-            });
+            toast.success(response.data.message)
             fetchAllQuestions();
           }
-        } catch (error) {
-          console.log(error)
-        }
-
+        } catch (error) { console.log(error) }
       }
     });
   }
@@ -245,7 +220,6 @@ export default function EditorPage() {
             {questions.map((q) => (
               <div key={q.id} className="card mb-4">
                 <div className="card-body">
-                  {/* Soal + tombol delete soal */}
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <div className="flex-grow-1 me-2">
                       <EditableText
@@ -254,15 +228,10 @@ export default function EditorPage() {
                         className="h5 mb-0"
                       />
                     </div>
-
                   </div>
-
                   <ul className="list-unstyled ps-3">
                     {q.options.map((opt) => (
-                      <li
-                        key={opt.id}
-                        className="d-flex justify-content-between align-items-center mb-2"
-                      >
+                      <li key={opt.id} className="d-flex justify-content-between align-items-center mb-2">
                         <div className="flex-grow-1 me-2">
                           <EditableText
                             text={opt.text}
@@ -332,9 +301,7 @@ function EditableText({
 
   const handleBlur = () => {
     setIsEditing(false);
-    if (value !== text) {
-      onBlur(value);
-    }
+    if (value !== text) onBlur(value);
   };
 
   return isEditing ? (

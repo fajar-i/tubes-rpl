@@ -21,7 +21,7 @@ const Auth: React.FC = () => {
     const { login, register, authToken, isLoading } = myAppHook();
     useEffect(() => {
         if (authToken) {
-            router.push("dashboard");
+            router.push("home");
             return;
         }
     }, [authToken, isLoading]);
