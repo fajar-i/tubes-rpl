@@ -25,6 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={istok_Web.variable}>
+      <head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons" />
+      </head>
       <body className={istok_Web.variable}>
         <AppProvider>
         <Toaster />
