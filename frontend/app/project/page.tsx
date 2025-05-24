@@ -1,7 +1,7 @@
 'use client';
 
 import Loader from "@/components/Loader";
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { myAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
