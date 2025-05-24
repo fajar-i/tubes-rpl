@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'public_id'
     ];
 
     /**
@@ -32,7 +33,13 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'id'
     ];
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
 
     /**
      * Get the attributes that should be cast.

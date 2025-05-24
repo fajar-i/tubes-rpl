@@ -2,27 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use App\Models\Question;
 use Illuminate\Http\Request;
 
 class QuestionController extends Controller
 {
-    public function index()
+    public function indexByProject(Project $project)
     {
-        $user_id = auth()->user()->id;
-        $questions = Question::where("user_id", $user_id)->with('options')->get();
+        $questions = $project->questions()->with('options')->get();
         return response()->json([
             "status" => true,
-            "question" => $questions
+            "questions" => $questions
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, Project $project)
     {
         $data = $request->validate([
             "text" => "required",
         ]);
-        $data["user_id"] = auth()->user()->id;
+        $data['project_id'] = $project->id;
         $question = Question::create($data);
 
         $data = $request->validate([
@@ -41,15 +41,15 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function show(Question $question)
-    {
-        $question = $question->with('options')->get();
-        return response()->json([
-            "status" => true,
-            "message" => "question data found",
-            "question" => $question
-        ]);
-    }
+    // public function show(Question $question)
+    // {
+    //     $question = $question->with('options')->get();
+    //     return response()->json([
+    //         "status" => true,
+    //         "message" => "question data found",
+    //         "question" => $question
+    //     ]);
+    // }
 
     public function update(Request $request, Question $question)
     {

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Options extends Model
+class Option extends Model
 {
     protected $fillable = ['question_id', 'text'];
     public function question(){

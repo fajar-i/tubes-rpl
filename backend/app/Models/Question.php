@@ -6,8 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Question extends Model
 {
-    protected $fillable = ['text', 'user_id'];
-    public function options() {
-        return $this->hasMany(Options::class);
+    protected $fillable = ['text', 'project_id'];
+    protected $hidden = [
+        'project_id',
+        'user_id'
+    ];
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
+    }
+    public function options()
+    {
+        return $this->hasMany(Option::class);
     }
 }
