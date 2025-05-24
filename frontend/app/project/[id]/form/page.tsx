@@ -1,9 +1,9 @@
 'use client';
 
 import Loader from "@/components/Loader";
-import React, { useEffect, useState, useRef } from 'react';
+import React, { use, useEffect, useState, useRef } from 'react';
 import { myAppHook } from "@/context/AppProvider";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Swal from "sweetalert2";
@@ -14,15 +14,19 @@ type Question = {
   text: string;
   options: Option[];
 };
-
+// {params}:{params:{id:string}}
 export default function EditorPage() {
   const router = useRouter();
   const { authToken } = myAppHook();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
-
+  // const id = usePathname().split('/')[2];
+  const params = useParams<{
+    id: any; tag: string; item: string
+  }>()
   useEffect(() => {
     setLoading(true);
+    console.log(params.id);
     if (!authToken) {
       router.push("/auth");
       return;
@@ -35,13 +39,12 @@ export default function EditorPage() {
 
   const fetchAllQuestions = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/questions`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/questions`, {
         headers: {
           Authorization: `Bearer ${authToken}`
         }
       })
-      setQuestions(response.data.question)
-
+      setQuestions(response.data.questions)
     } catch (error) {
       console.log("fetch all questions error : " + error);
     }
@@ -58,7 +61,7 @@ export default function EditorPage() {
       ],
     };
 
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/questions/`, newQuestion, {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/questions/`, newQuestion, {
       headers: {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${authToken}`

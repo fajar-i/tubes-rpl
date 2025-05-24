@@ -21,7 +21,7 @@ const Auth: React.FC = () => {
     const { login, register, authToken, isLoading } = myAppHook();
     useEffect(() => {
         if (authToken) {
-            router.push("home");
+            router.push("/project");
             return;
         }
     }, [authToken, isLoading]);
@@ -36,7 +36,7 @@ const Auth: React.FC = () => {
         if (isLogin) {
             try {
                 await login(formData.email, formData.password)
-             } catch (error) {
+            } catch (error) {
                 console.log(`Auth error: ${error}`)
             }
         }

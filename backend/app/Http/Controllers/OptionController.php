@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Options;
+use App\Models\Option;
 use Illuminate\Http\Request;
 
 class OptionController extends Controller
@@ -15,7 +15,7 @@ class OptionController extends Controller
             'text'        => 'required|string',
         ]);
 
-        $option = Options::create($validated);
+        $option = Option::create($validated);
 
         // Kembalikan langsung $option, bukan dibungkus
         return response()->json($option, 201);
@@ -27,7 +27,7 @@ class OptionController extends Controller
         $request->validate([
             "text" => "required"
         ]);
-        $option = Options::findOrFail($id);
+        $option = Option::findOrFail($id);
         $option->update(['text' => $request->input('text')]);
         return response()->json([
             "status" => true,
@@ -36,12 +36,12 @@ class OptionController extends Controller
         ]);
     }
 
-    public function destroy(Options $option)
+    public function destroy(Option $option)
     {
         $option->delete();
         return response()->json([
             "status" => true,
-            "message" => "options deleted succesfully"
+            "message" => "option deleted succesfully"
         ]);
     }
 }

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Swal from "sweetalert2";
-
 type Project = {
   nama_ujian: string,
   mata_pelajaran?: string,
@@ -23,7 +22,7 @@ export default function EditorPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project>();
-
+  
   useEffect(() => {
     setLoading(true);
     if (!authToken) {
@@ -67,11 +66,14 @@ export default function EditorPage() {
         Authorization: `Bearer ${authToken}`
       }
     });
-    // fetchAllProjects();
     setProjects((prev) => [...prev, response.data.project]);
 
     toast.success(response.data.message);
   };
+
+  const handleOpenProject = (p: Project) => {
+    router.push(`/project/${p.public_id}/form`);
+  }
 
   const handleOpenModal = async (p: Project) => {
     setSelectedProject(p);
@@ -244,7 +246,7 @@ export default function EditorPage() {
                       <button
                         className="btn btn-primary gap-3 "
                         style={{ minWidth: "130px" }}
-                        onClick={() => handleOpenModal(p)}
+                        onClick={() => handleOpenProject(p)}
                       >
                         Buka Project
                       </button>
