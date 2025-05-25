@@ -30,8 +30,14 @@ class QuestionController extends Controller
             'options.*.text' => 'required|string'
         ]);
         if (!empty($data['options'])) {
-            foreach ($data['options'] as $option) {
-                $question->options()->create(['text' => $option['text']]);
+            foreach ($data['options'] as $i => $option) {
+                if ($i == 0) $option['is_right'] = true;
+                else $option['is_right'] = false;
+                $question->options()->create([
+                    'text' => $option['text'],
+                    'option_code' => chr(65 + $i),
+                    'is_right' => $option['is_right']
+                ]);
             }
         }
         return response()->json([

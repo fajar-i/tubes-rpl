@@ -11,21 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('options', function (Blueprint $table) {
+        Schema::create('answers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('question_id')->constrained()->onDelete('cascade');
-            $table->text('option_code');
-            $table->boolean('is_right');
-            $table->text('text');
+            $table->foreignId("project_id")->constrained()->onDelete('cascade');
+            $table->json('answers');
             $table->timestamps();
         });
     }
-
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('options');
+        Schema::dropIfExists('answers');
     }
 };

@@ -1,32 +1,35 @@
 'use client';
 
 import Loader from "@/components/Loader";
-import React, { use, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { myAppHook } from "@/context/AppProvider";
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Swal from "sweetalert2";
 
-type Option = { id: number; text: string };
+type Option = {
+  id: number;
+  text: string;
+  is_right?: boolean;
+};
 type Question = {
   id: number;
   text: string;
   options: Option[];
 };
-// {params}:{params:{id:string}}
 export default function EditorPage() {
+  // const id = usePathname().split('/')[2];
   const router = useRouter();
   const { authToken } = myAppHook();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
-  // const id = usePathname().split('/')[2];
-  const params = useParams<{
-    id: any; tag: string; item: string
-  }>()
+  const params = useParams<{ id: any; tag: string; item: string }>()
+  const [isRight, setIsRight] = useState<{ [key: string]: number }>({});
+  const huruf = (i: number) => { return String.fromCharCode('A'.charCodeAt(0) + i) }
+  
   useEffect(() => {
     setLoading(true);
-    console.log(params.id);
     if (!authToken) {
       router.push("/auth");
       return;
@@ -34,8 +37,18 @@ export default function EditorPage() {
     fetchAllQuestions().finally(() => {
       setLoading(false);
     });
+  }, [authToken]);
 
-  }, [authToken])
+  useEffect(() => {
+    const rightAnswer: { [key: string]: number } = {};
+    questions.forEach((q) => {
+      const correctOption = q.options.find((o) => o.is_right);
+      if (correctOption) { rightAnswer[q.id] = correctOption.id; }
+    }
+    );
+    console.log(isRight)
+    setIsRight(rightAnswer);
+  }, [questions]);
 
   const fetchAllQuestions = async () => {
     try {
@@ -48,7 +61,7 @@ export default function EditorPage() {
     } catch (error) {
       console.log("fetch all questions error : " + error);
     }
-  }
+  };
 
   const handleAddQuestion = async () => {
     const newQuestion: Question = {
@@ -73,10 +86,13 @@ export default function EditorPage() {
 
   const handleQuestionBlur = async (qId: number, newText: string) => {
     // 1. Optimistic update: ubah state lokal dulu
+    if (!newText) {
+      newText = 'Text harus diisi';
+      console.log(newText)
+    }
     setQuestions((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, text: newText } : q))
     );
-
     // 2. Panggil API, tapi jangan panggil fetchAllQuestions()
     try {
       await axios.post(
@@ -96,9 +112,14 @@ export default function EditorPage() {
       // (opsional) rollback state jika error:
       fetchAllQuestions();
     }
+
   };
+
   const handleOptionBlur = async (qId: number, oId: number, newText: string) => {
     // Optimistic update
+    if (!newText) {
+      newText = 'Text harus diisi'
+    }
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === qId
@@ -129,6 +150,74 @@ export default function EditorPage() {
       // (opsional) rollback state jika error:
       fetchAllQuestions();
     }
+
+  };
+
+  const handleSetIsRight = async (qId: string, oId: string) => {
+    const parsedQId = parseInt(qId, 10);
+    const parsedOId = parseInt(oId, 10);
+    setIsRight(prev => ({
+      ...prev,
+      [parsedQId]: parsedOId
+    }));
+
+    setQuestions(prevQuestions =>
+      prevQuestions.map(q =>
+        q.id === parsedQId
+          ? {
+            ...q,
+            options: q.options.map(opt => ({
+              ...opt,
+              is_right: opt.id === parsedOId
+            }))
+          }
+          : q
+      )
+    );
+
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/rightOption/${parsedOId}`, // <-- Pastikan ini ID opsi yang benar
+        { _method: "PUT" },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      toast.success("Kunci Jawaban tersimpan");
+
+    } catch (e) {
+      toast.error("Gagal menyimpan kunci jawaban");
+      console.error(e);
+
+      setIsRight(prev => {
+        const newIsRight = { ...prev };
+        const originalQuestion = questions.find(q => q.id === parsedQId);
+        const originalCorrectOption = originalQuestion?.options.find(o => o.is_right);
+        if (originalCorrectOption) {
+          newIsRight[parsedQId] = originalCorrectOption.id;
+        } else {
+          delete newIsRight[parsedQId]; // Hapus jika tidak ada jawaban benar sebelumnya
+        }
+        return newIsRight;
+      });
+
+      setQuestions(prevQuestions =>
+        prevQuestions.map(q =>
+          q.id === parsedQId
+            ? {
+              ...q,
+              options: q.options.map(opt => ({
+                ...opt,
+                is_right: opt.id === (questions.find(q => q.id === parsedQId)?.options.find(o => o.is_right)?.id || false)
+              }))
+            }
+            : q
+        )
+      );
+    }
   };
 
   const handleAddOption = async (qId: number) => {
@@ -143,7 +232,7 @@ export default function EditorPage() {
             ...q,
             options: [
               ...q.options,
-              { id: tempId, text: "Pilihan baru" }, // text default
+              { id: tempId, text: "Pilihan baru", }, // text default
             ],
           }
           : q
@@ -173,7 +262,7 @@ export default function EditorPage() {
               ...q,
               options: q.options.map(o =>
                 o.id === tempId
-                  ? { id: created.id, text: created.text }  // ← pakai created.id & created.text
+                  ? { id: created.id, text: created.text, }  // ← pakai created.id & created.text
                   : o
               ),
             }
@@ -212,14 +301,15 @@ export default function EditorPage() {
         } catch (error) { console.log(error) }
       }
     });
-  }
+  };
+
   if (loading) {
     return <Loader />;
   } else {
     return (
       <div className="container py-4">
         <div className="row justify-content-center">
-          <div className="col-12 col-sm-10 col-md-8 col-lg-6">
+          <div className="col-13 col-sm-11 col-md-9 col-lg-7">
             {questions.map((q) => (
               <div key={q.id} className="card mb-4">
                 <div className="card-body">
@@ -233,8 +323,10 @@ export default function EditorPage() {
                     </div>
                   </div>
                   <ul className="list-unstyled ps-3">
-                    {q.options.map((opt) => (
-                      <li key={opt.id} className="d-flex justify-content-between align-items-center mb-2">
+                    {q.options.map((opt, index) => (
+
+                      <li key={opt.id} className="d-flex justify-content-center align-items-center mb-2">
+                        <div className="my-3 mb-0 d-flex flex-row" style={{ marginRight: '30px' }}>{huruf(index)}</div>
                         <div className="flex-grow-1 me-2">
                           <EditableText
                             text={opt.text}
@@ -252,10 +344,27 @@ export default function EditorPage() {
                     ))}
 
                     <li
-                      className="d-flex justify-content-between align-items-center text-primary fst-italic pt-3"
+                      className="d-flex justify-content-between align-items-center pt-3"
                       style={{ cursor: "pointer" }}
                     >
-                      <span onClick={() => handleAddOption(q.id)}>+ Tambah Pilihan</span>
+                      <span onClick={() => handleAddOption(q.id)} className="text-primary fst-italic"> + Tambah Pilihan</span>
+                      <label htmlFor={`${q.id}`}>Kunci jawaban :</label>
+
+                      <select
+                        id={`${q.id}`}
+                        value={isRight[q.id]}
+                        className="form-select input-small w-25"
+                        onChange={(e) => handleSetIsRight(e.target.id, e.target.value)}
+                      >
+                        {q.options.map((opt, index) => (
+                          <option
+                            key={opt.id}
+                            value={opt.id}
+                          >
+                            {huruf(index)}. {opt.text}
+                          </option>
+                        ))}
+                      </select>
                       <button
                         className="btn btn-sm btn-danger"
                         style={{ minWidth: '130px' }}
@@ -264,7 +373,6 @@ export default function EditorPage() {
                         Delete question
                       </button>
                     </li>
-
                   </ul>
                 </div>
               </div>
@@ -304,6 +412,7 @@ function EditableText({
 
   const handleBlur = () => {
     setIsEditing(false);
+    if (!value) setValue('Text harus diisi')
     if (value !== text) onBlur(value);
   };
 
@@ -316,8 +425,11 @@ function EditableText({
       className={`form-control ${className}`}
     />
   ) : (
-    <div onClick={handleClick} className={`border-bottom my-3 ${className}`} style={{ cursor: 'pointer' }}>
-      {text || '(Klik untuk edit)'}
+    <div className={`border-bottom my-3 ${className} d-flex flex-row`}>
+      {/* {isOption ? (<input type="radio" name={`${name}`} className={`form-check-input me-3`} onClick={() => console.log(value)} />) : undefined} */}
+      <div onClick={handleClick} style={{ cursor: 'pointer' }}>
+        {text || 'Text harus diisi'}
+      </div>
     </div>
   );
 }

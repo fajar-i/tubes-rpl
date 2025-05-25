@@ -22,7 +22,7 @@ export default function EditorPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project>();
-  
+
   useEffect(() => {
     setLoading(true);
     if (!authToken) {
@@ -54,10 +54,10 @@ export default function EditorPage() {
   const handleAddProject = async () => {
     const newProject: Project = {
       "public_id": "1234567",
-      "nama_ujian": "ujian baru",
-      "mata_pelajaran": "mata pelajaran ujian",
-      "kelas": "kelas saya",
-      "semester": "-",
+      "nama_ujian": "Ujian baru",
+      "mata_pelajaran": "Mata pelajaran ujian",
+      "kelas": "Kelas saya",
+      "semester": "Semester Ganjil/Genap",
     };
 
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/projects/`, newProject, {
@@ -76,6 +76,7 @@ export default function EditorPage() {
   }
 
   const handleOpenModal = async (p: Project) => {
+    setSelectedProject(undefined);
     setSelectedProject(p);
     setShowModal(true);
   }
@@ -134,8 +135,7 @@ export default function EditorPage() {
               Authorization: `Bearer ${authToken}`
             }
           })
-          setShowModal(false);
-
+          handleCloseModal();
           if (response.data.status) {
             toast.success(response.data.message)
             fetchAllProjects();
@@ -169,16 +169,19 @@ export default function EditorPage() {
                   <div className="modal-body d-flex flex-wrap gap-3 justify-content-center">
                     <input
                       type="text"
-                      className="form-control"
+                      className={`form-control ${selectedProject.nama_ujian ? '' : 'is-invalid'}`}
                       defaultValue={selectedProject.nama_ujian}
+                      placeholder="Nama ujian harus diisi"
                       onChange={(e) =>
                         setSelectedProject({ ...selectedProject, nama_ujian: e.target.value })
                       }
+                      required
                     />
                     <input
                       type="text"
                       className="form-control"
                       defaultValue={selectedProject.mata_pelajaran}
+                      placeholder="Mata pelajaran"
                       onChange={(e) =>
                         setSelectedProject({ ...selectedProject, mata_pelajaran: e.target.value })
                       }
@@ -187,6 +190,7 @@ export default function EditorPage() {
                       type="text"
                       className="form-control"
                       defaultValue={selectedProject.kelas}
+                      placeholder="Kelas"
                       onChange={(e) =>
                         setSelectedProject({ ...selectedProject, kelas: e.target.value })
                       }
@@ -195,6 +199,7 @@ export default function EditorPage() {
                       type="text"
                       className="form-control"
                       defaultValue={selectedProject.semester}
+                      placeholder="Semester"
                       onChange={(e) =>
                         setSelectedProject({ ...selectedProject, semester: e.target.value })
                       }
@@ -206,7 +211,7 @@ export default function EditorPage() {
                     </button>
                     <button
                       className="btn btn-primary"
-                      onClick={() => handleSaveProject(selectedProject)}
+                      onClick={selectedProject.nama_ujian ? (() => handleSaveProject(selectedProject)) : undefined}
                     >
                       Simpan
                     </button>
@@ -237,12 +242,18 @@ export default function EditorPage() {
                 >
                   <div className="card-body">
                     <div className="mb-3">
-                      <p className="h5 mb-0 m-2"> nama : {p.nama_ujian}</p>
-                      <p className="h5 mb-0 m-2"> mapel : {p.mata_pelajaran}</p>
-                      <p className="h5 mb-0 m-2"> kelas : {p.kelas}</p>
-                      <p className="h5 mb-0 m-2"> semester : {p.semester}</p>
+                      <p className="h5 mb-0 m-2">{p.nama_ujian}</p>
+                      {p.mata_pelajaran ? (
+                        <p className="h5 mb-0 m-2">{p.mata_pelajaran}</p>
+                      ) : <br className="h5 mb-0 m-2" />}
+                      {p.kelas ? (
+                        <p className="h5 mb-0 m-2">{p.kelas}</p>
+                      ) : <br className="h5 mb-0 m-2" />}
+                      {p.semester ? (
+                        <p className="h5 mb-0 m-2">{p.semester}</p>
+                      ) : <br className="h5 mb-0 m-2" />}
                     </div>
-                    <div className="d-flex flex-wrap gap-3 justify-content-around">
+                    <div className="d-flex flex-wrap gap-3 justify-content-between">
                       <button
                         className="btn btn-primary gap-3 "
                         style={{ minWidth: "130px" }}

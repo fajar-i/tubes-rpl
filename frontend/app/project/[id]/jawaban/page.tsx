@@ -11,7 +11,7 @@ export default function Jawaban() {
     const handleSave = () => {
         if (spreadsheetRef.current) {
             const data = spreadsheetRef.current[0].getData();
-            console.log("Data JSON:", data[0][0]);
+            console.log("Data JSON:", data);
             // Anda dapat mengirim data ini ke backend atau menyimpannya sesuai kebutuhan
         }
     };
