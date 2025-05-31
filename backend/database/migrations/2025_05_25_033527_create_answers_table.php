@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('answers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("project_id")->constrained()->onDelete('cascade');
-            $table->json('answers');
+            $table->foreignId('project_id')->constrained()->onDelete('cascade');
+            $table->string('kode_peserta');
+            $table->foreignId('question_id')->constrained()->onDelete('cascade');
+            $table->string('jawaban_huruf', 1)->nullable();
             $table->timestamps();
         });
     }

@@ -13,11 +13,13 @@ type Option = {
   text: string;
   is_right?: boolean;
 };
+
 type Question = {
   id: number;
   text: string;
   options: Option[];
 };
+
 export default function EditorPage() {
   // const id = usePathname().split('/')[2];
   const router = useRouter();
@@ -27,7 +29,7 @@ export default function EditorPage() {
   const params = useParams<{ id: any; tag: string; item: string }>()
   const [isRight, setIsRight] = useState<{ [key: string]: number }>({});
   const huruf = (i: number) => { return String.fromCharCode('A'.charCodeAt(0) + i) }
-  
+
   useEffect(() => {
     setLoading(true);
     if (!authToken) {

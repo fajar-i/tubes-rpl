@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnswerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OptionController;
@@ -15,6 +16,7 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::get('logout',  [AuthController::class, "logout"]);
         Route::get('/projects/{project}/questions', [QuestionController::class, 'indexByProject']);
         Route::post('/projects/{project}/questions', [QuestionController::class, 'store']);
+        Route::post('/projects/{project}/answers', [AnswerController::class, 'simpanJawaban']);
         Route::put('/rightOption/{option}', [OptionController::class, 'setIsRight']);
         Route::apiResource("projects", ProjectController::class);
         Route::apiResource("questions", QuestionController::class);
