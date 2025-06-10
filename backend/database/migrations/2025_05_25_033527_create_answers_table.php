@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('question_id')->constrained()->onDelete('cascade');
             $table->string('jawaban_huruf', 1)->nullable();
             $table->timestamps();
+            $table->unique(['project_id', 'kode_peserta', 'question_id'], 'idx_unique_jawaban_per_project_peserta_question');
         });
     }
     /**
@@ -25,6 +26,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('answers');
+        Schema::dropIfExists('answers', function (Blueprint $table) {
+            $table->dropUnique('idx_unique_jawaban_per_project_peserta_question');
+        });
     }
 };

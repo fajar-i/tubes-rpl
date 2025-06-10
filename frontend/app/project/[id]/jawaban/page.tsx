@@ -16,10 +16,20 @@ type Question = {
 export default function Jawaban() {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
-    const params = useParams<{ id: any; tag: string; item: string }>()
+    const params = useParams<{ id: any; tag: string; item: string }>();
     const [questions, setQuestions] = useState<Question[]>([]);
     const { authToken } = myAppHook();
     const [kodePesertaList, setKodePesertaList] = useState<string[]>([]);
+    const spreadsheetRef = useRef<any>(null);
+    const minRows = 10;
+
+    useEffect(() => {
+        const generatedList: string[] = [];
+        for (let i = 0; i < minRows; i++) {
+            generatedList.push(`Peserta_${i + 1}`);
+        }
+        setKodePesertaList(generatedList);
+    }, [minRows]);
 
     useEffect(() => {
         setLoading(true);
@@ -30,14 +40,15 @@ export default function Jawaban() {
         fetchAllQuestions().finally(() => {
             setLoading(false);
         });
-    }, [authToken]); // Tambahkan dependensi lain jika kodePesertaList diambil dari state/props
+    }, [authToken, params.id, router]);
 
-    useEffect(() => {
-        console.log("Current questions state:", questions);
-        // Anda juga bisa melihat questionIds yang terbuat dari state ini
-        const questionIds = questions.map(q => q.id);
-        console.log("Current question IDs:", questionIds);
-    }, [questions]); // Jalankan setiap kali `questions` berubah
+    // useEffect(() => {
+    //     if (spreadsheetRef.current && spreadsheetRef.current[0]) {
+    //         const spreadsheetInstance = spreadsheetRef.current[0];
+    //         // spreadsheetInstance.setWidth(0, 150);
+    //         // spreadsheetInstance.setWidth(1, 100);
+    //     }
+    // }, [questions, kodePesertaList]);
 
     const fetchAllQuestions = async () => {
         try {
@@ -45,104 +56,100 @@ export default function Jawaban() {
                 headers: {
                     Authorization: `Bearer ${authToken}`
                 }
-            })
+            });
             setQuestions(response.data.questions);
-            console.log(response.data.questions);
-            console.log(questions);
+            console.log("Pertanyaan yang berhasil dimuat:", response.data.questions);
         } catch (error) {
-            console.log("fetch all questions error : " + error);
+            console.error("Gagal mengambil semua pertanyaan:", error);
         }
     };
 
-    const spreadsheetRef = useRef(null);
-
     const handleSave = async () => {
-        if (spreadsheetRef.current) {
-            const allData = spreadsheetRef.current[0].getData();
-            const generatedKodePesertaList: string[] = [];
-            const jawabanDataValid: (string | null)[][] = [];
-            console.log("Data mentah dari jspreadsheet:", allData);
+        if (!spreadsheetRef.current) {
+            console.error("Spreadsheet reference is not available.");
+            return;
+        }
 
-            // Filter baris yang benar-benar memiliki data
-            const nonEmptyRows = allData.filter(row =>
-                row && row.length > 0 && row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '')
-            );
+        const allData = spreadsheetRef.current[0].getData();
+        console.log("Data mentah dari jspreadsheet (termasuk kosong):", allData);
 
-            if (nonEmptyRows.length === 0) {
-                console.warn("Tidak ada data yang valid untuk disimpan.");
-                alert("Tidak ada data yang valid untuk disimpan.");
+        const questionIds = questions.map(q => q.id);
+
+        const filteredKodePesertaList: string[] = []; // Daftar kode peserta yang benar-benar ada datanya
+        const filteredJawabanData: (string | null)[][] = []; // Data jawaban yang valid
+
+        // Iterasi semua baris dari Jspreadsheet
+        allData.forEach((row, index) => {
+            const kodePesertaSaatIni = kodePesertaList[index]; // Ambil kode peserta yang sudah digenerate/tersedia
+
+            // Pastikan kode peserta untuk baris ini ada
+            if (!kodePesertaSaatIni) {
+                console.warn(`Kode peserta tidak ditemukan untuk baris indeks ${index}. Melewati baris ini.`);
                 return;
             }
 
-            // Iterasi hanya pada baris yang memiliki data untuk mengenerate kode peserta dan mengekstrak jawaban
-            nonEmptyRows.forEach((row, index) => {
-                // Generate kode peserta secara dinamis dan rapih (1 sampai N)
-                const kodePeserta = `PESERTA_${index + 1}`;
-                generatedKodePesertaList.push(kodePeserta);
-
-                // Ekstrak jawaban dari baris ini
-                const answersForRow = row.map(cell => {
-                    const cellValue = String(cell).trim();
-                    return cellValue === '' ? null : cellValue; // Jika kosong, kirim null
-                });
-                jawabanDataValid.push(answersForRow);
+            const answersForRow = row.map(cell => {
+                const cellValue = String(cell).trim();
+                return cellValue === '' || cellValue.toLowerCase() === 'null' ? null : cellValue;
             });
 
-            // Set state kodePesertaList dengan daftar kode peserta yang baru digenerate
-            // Penting: Pastikan ini dilakukan SETELAH loop selesai
-            setKodePesertaList(generatedKodePesertaList);
-
-            const questionIds = questions.map(q => q.id); // Mendapatkan ID pertanyaan dari state
-
-            // Validasi tambahan sebelum mengirim
-            if (questionIds.length === 0) {
-                console.error("Tidak ada ID pertanyaan yang diambil. Pastikan API pertanyaan berfungsi.");
-                return;
+            // Filter: Hanya kirim baris jika ada setidaknya satu jawaban non-null
+            if (answersForRow.some(cell => cell !== null)) {
+                filteredKodePesertaList.push(kodePesertaSaatIni);
+                filteredJawabanData.push(answersForRow);
             }
-            if (kodePesertaList.length === 0 || jawabanDataValid.length === 0) {
-                console.warn("Tidak ada data peserta atau jawaban untuk disimpan.");
-                return;
-            }
-            // Pastikan jumlah baris jawaban sama dengan jumlah kode peserta
-            if (jawabanDataValid.length !== kodePesertaList.length) {
-                console.error("Jumlah baris jawaban tidak sesuai dengan jumlah kode peserta yang disediakan.");
-                return;
-            }
-            // Pastikan jumlah kolom jawaban per peserta sama dengan jumlah pertanyaan
-            if (jawabanDataValid.some(row => row.length !== questionIds.length)) {
-                console.error("Jumlah jawaban per peserta tidak sesuai dengan jumlah pertanyaan. Periksa data jspreadsheet.");
-                return;
-            }
+            // Baris yang sepenuhnya null (tidak ada jawaban sama sekali) tidak akan masuk ke filteredJawabanData
+        });
 
-            const payload = {
-                question_ids: questionIds,
-                kode_peserta_list: kodePesertaList, // Ambil dari state atau sumber lain
-                jawaban_data: jawabanDataValid,
-            };
+        // Validasi dasar
+        if (questionIds.length === 0) {
+            console.error("Tidak ada ID pertanyaan yang diambil. Pastikan API pertanyaan berfungsi.");
+            alert("Terjadi kesalahan: ID pertanyaan tidak ditemukan. Mohon coba lagi.");
+            return;
+        }
 
-            console.log("Payload yang akan dikirim:", payload);
+        // Jika tidak ada data yang difilter sama sekali
+        const isPayloadCompletelyEmpty = filteredJawabanData.length === 0;
 
-            try {
-                const response = await axios.post(
-                    `${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/answers`, // Sesuaikan dengan route API Anda
-                    payload,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${authToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
-                console.log("Respon dari backend:", response.data);
-                alert(response.data.message); // Tampilkan pesan sukses
-            } catch (error) {
-                console.error("Gagal menyimpan jawaban:", error);
-                if (axios.isAxiosError(error) && error.response) {
-                    console.error("Error response data:", error.response.data);
-                    alert(`Gagal menyimpan: ${error.response.data.message || 'Terjadi kesalahan'}`);
-                } else {
-                    alert("Terjadi kesalahan jaringan atau server.");
+        // Validasi jumlah kolom per baris jawaban (hanya untuk data yang akan dikirim)
+        if (!isPayloadCompletelyEmpty && filteredJawabanData.some(row => row.length !== questionIds.length)) {
+            console.error("Jumlah jawaban per peserta tidak sesuai dengan jumlah pertanyaan. Periksa data Jspreadsheet.");
+            alert("Jumlah kolom jawaban tidak cocok dengan jumlah pertanyaan. Pastikan semua sel terisi atau kosong sesuai soal.");
+            return;
+        }
+
+        const payload = {
+            question_ids: questionIds,
+            // Kirim daftar kode peserta yang hanya memiliki data
+            kode_peserta_list: filteredKodePesertaList,
+            // Kirim data jawaban yang sudah difilter
+            jawaban_data: filteredJawabanData,
+            // Flag ini sekarang menandakan jika *tidak ada data valid sama sekali* yang dikirim
+            delete_all_if_empty: isPayloadCompletelyEmpty,
+        };
+
+        console.log("Payload yang akan dikirim:", payload);
+
+        try {
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/answers`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    },
                 }
+            );
+            console.log("Respon dari backend:", response.data);
+            alert(response.data.message);
+        } catch (error) {
+            console.error("Gagal menyimpan jawaban:", error);
+            if (axios.isAxiosError(error) && error.response) {
+                console.error("Data error dari backend:", error.response.data);
+                alert(`Gagal menyimpan: ${error.response.data.message || 'Terjadi kesalahan pada server.'}`);
+            } else {
+                alert("Terjadi kesalahan jaringan atau server.");
             }
         }
     };
@@ -150,21 +157,22 @@ export default function Jawaban() {
     if (loading) {
         return <Loader />;
     } else {
-        // Render component
+        const minCols = questions.length > 0 ? questions.length : 10;
+        const initialRows = kodePesertaList.length > 0 ? kodePesertaList.length : 6;
+
         return (
             <div>
                 <Spreadsheet ref={spreadsheetRef} tabs={true} toolbar={true}>
                     <Worksheet
-                        minDimensions={[questions.length, 6]} // Jumlah kolom sesuai jumlah pertanyaan
+                        minDimensions={[minCols, initialRows]}
                         allowInsertColumn={false}
-                        columns={questions.map((q, index) => ({ title: `Pertanyaan ${index + 1} (ID: ${q.id})`, width: 50 }))}
-                    // Anda mungkin ingin menambahkan header untuk kolom
-                    // Jika Anda menggunakan nama baris (row headers) di jspreadsheet,
-                    // Anda bisa mengaturnya di sini atau saat inisialisasi JSS:
-                    // rowHeaders: kodePesertaList,
+                        columns={questions.map((q, index) => ({ title: `Soal ${index + 1}`, width: 80 }))}
+                        rows={kodePesertaList.map((kode) => ({ title: kode, width: 100 }))} // Menggunakan kodePesertaList sebagai nama baris
                     />
                 </Spreadsheet>
-                <button onClick={handleSave}>Simpan Data sebagai JSON</button>
+                <button onClick={handleSave} disabled={loading || questions.length === 0}>
+                    {loading ? "Memuat..." : "Simpan Data sebagai JSON"}
+                </button>
             </div>
         );
     }
