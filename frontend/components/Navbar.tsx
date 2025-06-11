@@ -35,7 +35,7 @@ const Navbar = () => {
                           <Link className="nav-link" href={`/project/${projectId}/jawaban`}>Jawaban</Link>
                         </li>
                         <li className="nav-item">
-                          <Link className="nav-link" href={`/project/${projectId}/form`}>Hasil</Link>
+                          <Link className="nav-link" href={`/project/${projectId}/result`}>Hasil</Link>
                         </li>
                       </>
                     ) : null

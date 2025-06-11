@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\JawabanPeserta;
 use App\Models\Project;
 use App\Models\Question;
 use App\Models\Option;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ResultController extends Controller
 {
