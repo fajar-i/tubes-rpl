@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OptionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ResultController;
 
 Route::post('register',  [AuthController::class, "register"]);
 Route::post('login',  [AuthController::class, "login"]);
@@ -22,5 +23,6 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::apiResource("projects", ProjectController::class);
         Route::apiResource("questions", QuestionController::class);
         Route::apiResource("options", OptionController::class);
+        Route::get('/projects/{project}/result', [ResultController::class, 'getAnalisis']);
     }
 );
