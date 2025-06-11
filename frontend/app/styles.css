@@ -7,7 +7,7 @@
   margin-left: auto;
 }
 body {
-  font-family: var(--font-istok_Web), "Istok Web", sans-serif;
+  font-family: var(--font-poppins), Arial;
   background-color: #ffffff;
   color: #111;
   line-height: 1.6;
@@ -18,7 +18,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
 }
-.logout:hover{
+.logout:hover {
   cursor: pointer;
 }
 /* Header */
@@ -28,7 +28,7 @@ nav {
   background-color: #ffffff;
   color: #004b63;
 }
-.nav-link{
+.nav-link {
   color: #004b63;
 }
 
@@ -40,7 +40,6 @@ nav {
 
 .logo {
   font-size: 1.7rem;
-  font-weight: bold;
   color: #004b63;
   text-decoration: none;
 }
@@ -62,7 +61,7 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 60px 0;
+  padding-top: 20px;
   flex-wrap: wrap;
 }
 
@@ -96,7 +95,6 @@ nav {
   justify-content: space-between;
   width: 370px; /* Tambahkan lebar agar space-between bisa bekerja */
   margin-right: 60px;
-
 }
 
 .cta-button {

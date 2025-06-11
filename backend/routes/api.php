@@ -16,6 +16,7 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::get('logout',  [AuthController::class, "logout"]);
         Route::get('/projects/{project}/questions', [QuestionController::class, 'indexByProject']);
         Route::post('/projects/{project}/questions', [QuestionController::class, 'store']);
+        Route::get('/projects/{project}/answers', [AnswerController::class, 'getJawaban']);
         Route::post('/projects/{project}/answers', [AnswerController::class, 'simpanJawaban']);
         Route::put('/rightOption/{option}', [OptionController::class, 'setIsRight']);
         Route::apiResource("projects", ProjectController::class);

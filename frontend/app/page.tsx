@@ -3,7 +3,6 @@ import { myAppHook } from "@/context/AppProvider"
 export default function Home() {
     const { logout, authToken } = myAppHook();
     return <>
-
         <main>
             <div className="container hero">
                 <div className="hero-text">
@@ -11,7 +10,6 @@ export default function Home() {
                     <p className="subtitle">
                         Evaluasi pembelajaran dengan mudah, cepat, dan empiris
                     </p>
-                    <br />
                     <br />
                     <p className="description">
                         Proses analisis empiris dari soal ujianmu secara instan!<br />
@@ -39,7 +37,7 @@ export default function Home() {
                             <div className="hero-image">
                                 <img src="/lambang2.png" alt="Ilustrasi Analisis" />
                                 <div className="cta-wrapper">
-                                    <a href="/auth" className="cta-button" style={{ marginLeft: 'auto' }}>Coba Sekarang</a>
+                                    <a href="/auth" className="cta-button " style={{ marginLeft: 'auto' }}>Coba Sekarang</a>
                                 </div>
                             </div>
                         </>

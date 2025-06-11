@@ -5,11 +5,80 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\JawabanPeserta;
 use App\Models\Project;
+use App\Models\Question;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AnswerController extends Controller
 {
+    public function getJawaban(Project $project)
+    {
+        try {
+            // Ambil semua jawaban untuk project ini
+            // Urutkan berdasarkan kode_peserta dan question_id untuk konsistensi
+            $answers = JawabanPeserta::where('project_id', $project->id)
+                ->orderBy('kode_peserta')
+                ->orderBy('question_id')
+                ->get();
+
+            // Ambil semua pertanyaan terkait project ini, diurutkan berdasarkan ID
+            $questions = Question::where('project_id', $project->id) // Asumsi ada project_id di tabel questions
+                ->orderBy('id')
+                ->get();
+
+            // Buat map dari question_id ke indeks kolom
+            $questionIdToIndex = [];
+            foreach ($questions as $index => $question) {
+                $questionIdToIndex[$question->id] = $index;
+            }
+
+            // Inisialisasi struktur data untuk frontend
+            $formattedAnswers = [];
+            $kodePesertaSet = []; // Untuk melacak kode peserta yang unik
+
+            // Loop melalui jawaban untuk membangun struktur 2D array
+            foreach ($answers as $answer) {
+                $kodePeserta = $answer->kode_peserta;
+                $questionId = $answer->question_id;
+                $jawabanHuruf = $answer->jawaban_huruf; // Ini bisa null
+
+                // Tambahkan kode_peserta ke set jika belum ada
+                if (!isset($formattedAnswers[$kodePeserta])) {
+                    $formattedAnswers[$kodePeserta] = array_fill(0, count($questions), null); // Inisialisasi baris dengan null
+                    $kodePesertaSet[$kodePeserta] = true; // Tandai sudah ada
+                }
+
+                // Tempatkan jawaban pada posisi yang benar berdasarkan question_id
+                if (isset($questionIdToIndex[$questionId])) {
+                    $colIndex = $questionIdToIndex[$questionId];
+                    $formattedAnswers[$kodePeserta][$colIndex] = $jawabanHuruf;
+                }
+            }
+
+            // Ubah array asosiatif menjadi array indeks numerik dan urutkan
+            ksort($formattedAnswers); // Urutkan berdasarkan kode_peserta (string)
+            $jawabanDataForFrontend = array_values($formattedAnswers); // Ubah menjadi array numerik
+
+            // Ambil daftar kode peserta yang terurut
+            $kodePesertaListForFrontend = array_keys($formattedAnswers);
+
+
+            return response()->json([
+                'questions' => $questions->map(fn($q) => ['id' => $q->id])->toArray(), // Kirim hanya ID pertanyaan
+                'kode_peserta_list' => $kodePesertaListForFrontend,
+                'jawaban_data' => $jawabanDataForFrontend,
+                'message' => 'Data jawaban berhasil diambil.',
+                'status' => 'success'
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Gagal mengambil jawaban: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat mengambil jawaban: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+
     public function simpanJawaban(Request $request, Project $project)
     {
         try {
@@ -77,9 +146,9 @@ class AnswerController extends Controller
             if (!empty($kodePesertaList)) {
                 // Ambil daftar kode peserta yang saat ini ada di database untuk project ini
                 $existingKodePeserta = JawabanPeserta::where('project_id', $project->id)
-                                                    ->pluck('kode_peserta')
-                                                    ->unique()
-                                                    ->toArray();
+                    ->pluck('kode_peserta')
+                    ->unique()
+                    ->toArray();
 
                 // Identifikasi kode peserta yang ada di DB tapi tidak ada di payload frontend
                 $kodePesertaToDelete = array_diff($existingKodePeserta, $kodePesertaList);
@@ -87,8 +156,8 @@ class AnswerController extends Controller
                 if (!empty($kodePesertaToDelete)) {
                     // Hapus semua jawaban untuk kode peserta yang tidak lagi terdaftar di frontend
                     JawabanPeserta::where('project_id', $project->id)
-                                ->whereIn('kode_peserta', $kodePesertaToDelete)
-                                ->delete();
+                        ->whereIn('kode_peserta', $kodePesertaToDelete)
+                        ->delete();
                 }
             } else {
                 // Jika kodePesertaList dari frontend kosong, artinya tidak ada peserta yang dikirim.
@@ -134,7 +203,6 @@ class AnswerController extends Controller
                 'message' => 'Jawaban peserta berhasil diproses (disimpan/diperbarui/dihapus)!',
                 'status' => 'success'
             ], 200);
-
         } catch (ValidationException $e) {
             DB::rollBack();
             return response()->json([
