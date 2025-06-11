@@ -6,7 +6,6 @@ import { myAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import axios from 'axios';
 import toast from 'react-hot-toast'; // Pastikan sudah diimpor
-import Swal from "sweetalert2";
 
 type Option = {
   id: number;
@@ -51,8 +50,6 @@ type AnalysisResults = {
   sum_of_item_variances?: number;
   total_score_variance?: number;
 };
-// --- Akhir Definisi Tipe Analisis ---
-
 
 export default function EditorPage() {
   const router = useRouter();
@@ -112,15 +109,13 @@ export default function EditorPage() {
         }
       });
       setAnalysisResults(response.data.analisis); // Simpan hasil analisis dari backend
-      toast.success(response.data.message); // Notifikasi sukses
+      toast.success('hasil analisis ditemukan'); // Notifikasi sukses
       console.log("Analisis berhasil dimuat:", response.data.analisis);
     } catch (error) {
       console.error("Fetch analysis results error:", error);
       toast.error("Gagal memuat hasil analisis.");
     }
   };
-  // --- Akhir Fungsi Baru ---
-
 
   if (loading) {
     return <Loader />;
