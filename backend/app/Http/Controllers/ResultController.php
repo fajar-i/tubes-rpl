@@ -15,7 +15,7 @@ class ResultController extends Controller
     // ... (method simpanJawaban dan getJawaban yang sudah ada)
 
     /**
-     * Menggabungkan perhitungan validitas dan reliabilitas untuk suatu project.
+     * Menggabungkan perhitungan validitas, reliabilitas, tingkat kesukaran, daya beda, dan kualitas pengecoh untuk suatu project.
      * @param  \App\Models\Project  $project
      * @return \Illuminate\Http\JsonResponse
      */
@@ -24,8 +24,8 @@ class ResultController extends Controller
         try {
             // 1. Ambil semua pertanyaan terkait project ini
             $questions = Question::where('project_id', $project->id)
-                                 ->orderBy('id')
-                                 ->get();
+                ->orderBy('id')
+                ->get();
 
             if ($questions->isEmpty()) {
                 return response()->json([
@@ -34,11 +34,23 @@ class ResultController extends Controller
                 ], 404);
             }
 
-            // 2. Ambil semua opsi jawaban yang benar
-            $correctOptions = Option::whereIn('question_id', $questions->pluck('id'))
-                                    ->where('is_right', true)
-                                    ->pluck('option_code', 'question_id')
-                                    ->toArray();
+            // 2. Ambil semua opsi jawaban (TERMASUK YANG SALAH) untuk pertanyaan-pertanyaan ini
+            // Kita juga perlu tahu kunci jawaban
+            $allOptions = Option::whereIn('question_id', $questions->pluck('id'))
+                ->orderBy('question_id')
+                ->orderBy('option_code') // Pastikan urutan opsi konsisten (A, B, C, D)
+                ->get()
+                ->groupBy('question_id'); // Kelompokkan berdasarkan question_id
+
+            $correctOptions = []; // [question_id => option_code_benar]
+            foreach ($allOptions as $qId => $options) {
+                foreach ($options as $option) {
+                    if ($option->is_right) {
+                        $correctOptions[$qId] = $option->option_code;
+                        break;
+                    }
+                }
+            }
 
             if (empty($correctOptions)) {
                 return response()->json([
@@ -53,15 +65,12 @@ class ResultController extends Controller
 
             // 3. Ambil semua jawaban peserta dan hitung skor
             $answers = JawabanPeserta::where('project_id', $project->id)
-                                    ->whereIn('question_id', $questionIdsWithKeys)
-                                    ->get();
+                ->whereIn('question_id', $questionIdsWithKeys)
+                ->get();
 
-            $participantScoresRaw = []; // [kode_peserta => [question_id => score]]
-            $totalScoresPerParticipant = []; // [kode_peserta => total_score]
+            $participantItemAnswers = []; // [kode_peserta => [question_id => jawaban_huruf_peserta]] - Untuk kualitas pengecoh
+            $participantScoresRaw = []; // [kode_peserta => [question_id => score (0/1)]]
 
-            // Inisialisasi skor untuk semua peserta dan soal yang memiliki kunci jawaban
-            // Ini penting untuk memastikan setiap peserta memiliki entri untuk setiap soal yang valid
-            // meskipun mereka tidak menjawabnya (skor 0).
             foreach ($answers as $answer) {
                 $kodePeserta = $answer->kode_peserta;
                 $questionId = $answer->question_id;
@@ -73,7 +82,8 @@ class ResultController extends Controller
 
                 $score = ($jawabanPeserta === $kunciJawaban[$questionId]) ? 1 : 0;
 
-                $participantScoresRaw[$kodePeserta][$questionId] = $score;
+                $participantItemAnswers[$kodePeserta][$questionId] = $jawabanPeserta; // Simpan jawaban asli
+                $participantScoresRaw[$kodePeserta][$questionId] = $score; // Simpan skor
             }
 
             // Ambil semua kode peserta unik yang memiliki jawaban
@@ -86,50 +96,39 @@ class ResultController extends Controller
             }
 
             // Urutkan kode peserta secara alami (misal: Peserta_1, Peserta_2, Peserta_10)
-            // Ini sangat penting untuk konsistensi.
-            natsort($allKodePeserta); // Mengurutkan string 'Peserta_1', 'Peserta_10', 'Peserta_2' dengan benar
+            natsort($allKodePeserta);
 
-            // --- REKONSTRUKSI DATA UNTUK KORELASI & VARIAN SECARA KONSISTEN ---
+            // --- REKONSTRUKSI DATA UNTUK KORELASI, VARIAN, TINGKAT KESUKARAN, DAYA BEDA ---
             $totalScoresArrayForCorrelation = []; // Array total skor peserta (sesuai urutan $allKodePeserta)
             $itemScoresForCorrelation = [];      // [question_id => [skor_peserta_1, skor_peserta_2, ...]]
+            $participantTotalScores = [];       // [kode_peserta => total_score] - untuk pengurutan
+            $totalParticipants = count($allKodePeserta); // N = jumlah peserta
 
-            // Inisialisasi struktur itemScoresForCorrelation dengan semua question_ids
             foreach ($questionIdsWithKeys as $qId) {
                 $itemScoresForCorrelation[$qId] = [];
             }
 
-            // Iterasi melalui peserta dalam urutan yang konsisten
             foreach ($allKodePeserta as $kodePeserta) {
                 $currentParticipantTotalScore = 0;
                 foreach ($questionIdsWithKeys as $qId) {
-                    // Dapatkan skor item untuk peserta ini, default 0 jika tidak ada jawaban
                     $itemScore = $participantScoresRaw[$kodePeserta][$qId] ?? 0;
-
-                    // Tambahkan skor item ke array itemScoresForCorrelation
                     $itemScoresForCorrelation[$qId][] = $itemScore;
-
-                    // Tambahkan skor item ke total skor peserta ini
                     $currentParticipantTotalScore += $itemScore;
                 }
                 $totalScoresArrayForCorrelation[] = $currentParticipantTotalScore;
+                $participantTotalScores[$kodePeserta] = $currentParticipantTotalScore;
             }
-            // Kini $totalScoresArrayForCorrelation dan setiap $itemScoresForCorrelation[$qId]
-            // memiliki panjang yang sama dan urutan yang sama (sesuai $allKodePeserta).
 
 
             // --- PERHITUNGAN VARIAN (Populasi atau Sampel) ---
-            // Set ini menjadi TRUE jika Excel Anda menggunakan VAR.S atau STDEV.S
-            // Jika tidak, biarkan FALSE (ini standar untuk psikometri, VAR.P / STDEV.P)
             $useSampleVariance = true; // <--- Sesuaikan ini dengan Excel Anda!
 
 
             // --- PERHITUNGAN RELIABILITAS (Cronbach's Alpha) ---
             $alpha = null;
             $sumOfItemVariances = 0;
-            // Hitung varian total skor
             $totalScoreVariance = $this->calculateVariance($totalScoresArrayForCorrelation, $useSampleVariance);
 
-            // Hitung varian setiap item dan jumlahkan
             foreach ($questionIdsWithKeys as $qId) {
                 $itemVariance = $this->calculateVariance($itemScoresForCorrelation[$qId], $useSampleVariance);
                 $sumOfItemVariances += $itemVariance;
@@ -152,8 +151,7 @@ class ResultController extends Controller
 
                 $itemScoreArray = $itemScoresForCorrelation[$questionId];
 
-                if (count($itemScoreArray) > 1 && count($itemScoreArray) === count($totalScoresArrayForCorrelation)) {
-                    // Kirim parameter $useSampleVariance ke fungsi korelasi Pearson
+                if ($totalParticipants > 1 && count($itemScoreArray) === $totalParticipants) {
                     $correlation = $this->calculatePearsonCorrelation($itemScoreArray, $totalScoresArrayForCorrelation, $useSampleVariance);
                     $validitasItems[$questionId] = $correlation;
                 } else {
@@ -162,22 +160,188 @@ class ResultController extends Controller
             }
 
 
+            // --- PERHITUNGAN TINGKAT KESUKARAN (Difficulty Level / P-value) ---
+            $tingkatKesukaranItems = [];
+            foreach ($questions as $question) {
+                $questionId = $question->id;
+
+                if (!isset($kunciJawaban[$questionId])) {
+                    $tingkatKesukaranItems[$questionId] = null;
+                    continue;
+                }
+
+                $correctCount = array_sum($itemScoresForCorrelation[$questionId]);
+                $tingkatKesukaranItems[$questionId] = ($totalParticipants > 0) ? ($correctCount / $totalParticipants) : null;
+            }
+
+
+            // --- PERHITUNGAN DAYA BEDA (Discrimination Index) ---
+            $dayaBedaItems = [];
+            arsort($participantTotalScores); // Urutkan peserta berdasarkan skor total mereka (descending)
+
+            $groupPercentage = 0.27; // 27% adalah standar umum
+            $numInGroup = floor($totalParticipants * $groupPercentage);
+
+            if ($numInGroup < 1) {
+                $dayaBedaItems = array_fill_keys($questionIdsWithKeys, null);
+            } else {
+                $upperGroup = array_slice($participantTotalScores, 0, $numInGroup, true);
+                $lowerGroup = array_slice($participantTotalScores, -$numInGroup, $numInGroup, true);
+
+                foreach ($questions as $question) {
+                    $questionId = $question->id;
+
+                    if (!isset($kunciJawaban[$questionId])) {
+                        $dayaBedaItems[$questionId] = null;
+                        continue;
+                    }
+
+                    $correctInUpperGroup = 0;
+                    foreach ($upperGroup as $kodePeserta => $score) {
+                        $correctInUpperGroup += $participantScoresRaw[$kodePeserta][$questionId] ?? 0;
+                    }
+
+                    $correctInLowerGroup = 0;
+                    foreach ($lowerGroup as $kodePeserta => $score) {
+                        $correctInLowerGroup += $participantScoresRaw[$kodePeserta][$questionId] ?? 0;
+                    }
+
+                    $dayaBedaItems[$questionId] = ($numInGroup > 0) ? (($correctInUpperGroup - $correctInLowerGroup) / $numInGroup) : null;
+                }
+            }
+
+
+            // --- PERHITUNGAN KUALITAS PENGECOH (Distractor Analysis) ---
+            $kualitasPengecohItems = [];
+            if ($numInGroup >= 1) {
+                foreach ($questions as $question) {
+                    $questionId = $question->id;
+
+                    if (!isset($kunciJawaban[$questionId])) {
+                        $kualitasPengecohItems[$questionId] = [
+                            'summary_message' => 'Tidak ada kunci jawaban.',
+                            'options' => [] // Mengganti 'distractors' menjadi 'options'
+                        ];
+                        continue;
+                    }
+
+                    $correctAnswerCode = $kunciJawaban[$questionId];
+                    $optionsForQuestion = $allOptions->get($questionId);
+
+                    if ($optionsForQuestion->isEmpty()) {
+                        $kualitasPengecohItems[$questionId] = [
+                            'summary_message' => 'Tidak ada opsi jawaban.',
+                            'options' => []
+                        ];
+                        continue;
+                    }
+
+                    $optionAnalysis = [];
+                    foreach ($optionsForQuestion as $option) {
+                        $optionCode = $option->option_code;
+                        $isCorrectOption = $option->is_right;
+
+                        $countUpper = 0;
+                        $countLower = 0;
+                        $countTotal = 0;
+
+                        foreach ($allKodePeserta as $kodePeserta) {
+                            $answer = $participantItemAnswers[$kodePeserta][$questionId] ?? null;
+
+                            if ($answer === $optionCode) {
+                                $countTotal++;
+                                if (isset($upperGroup[$kodePeserta])) {
+                                    $countUpper++;
+                                } elseif (isset($lowerGroup[$kodePeserta])) {
+                                    $countLower++;
+                                }
+                            }
+                        }
+
+                        $upperProp = ($numInGroup > 0) ? ($countUpper / $numInGroup) : 0;
+                        $lowerProp = ($numInGroup > 0) ? ($countLower / $numInGroup) : 0;
+                        $totalProp = ($totalParticipants > 0) ? ($countTotal / $totalParticipants) : 0;
+
+                        $effectivenessScore = null; // Skor efektivitas 0-1 untuk pengecoh
+                        $qualityRating = "Tidak Cukup Data";
+
+                        if (!$isCorrectOption) { // Hanya untuk pengecoh (opsi yang salah)
+                            if ($totalParticipants > 0) {
+                                // Pengecoh efektif jika menarik lebih banyak kelompok bawah daripada atas
+                                // Dan secara umum menarik sejumlah peserta
+                                if ($lowerProp > $upperProp && $totalProp > 0.05) { // Misalnya minimal 5% memilih
+                                    $effectivenessScore = $lowerProp - $upperProp; // Selisih proporsi
+                                    $qualityRating = "Efektif";
+                                    if ($effectivenessScore < 0.10) $qualityRating = "Cukup Efektif"; // Contoh ambang batas
+                                } elseif ($lowerProp == $upperProp && $totalProp > 0) {
+                                    $effectivenessScore = 0.0;
+                                    $qualityRating = "Netral";
+                                } elseif ($upperProp > $lowerProp && $totalProp > 0) {
+                                    $effectivenessScore = $lowerProp - $upperProp; // Akan negatif
+                                    $qualityRating = "Terbalik / Perlu Revisi";
+                                } else {
+                                    $effectivenessScore = 0.0;
+                                    $qualityRating = "Tidak Dipilih";
+                                }
+                            } else {
+                                $effectivenessScore = null;
+                                $qualityRating = "Tidak Cukup Data";
+                            }
+                        } else { // Ini adalah kunci jawaban
+                            $effectivenessScore = $upperProp - $lowerProp; // Kunci harus menarik upper lebih dari lower
+                            if ($upperProp > 0.7 && $upperProp > $lowerProp) {
+                                $qualityRating = "Sangat Baik";
+                            } elseif ($upperProp > 0.4 && $upperProp > $lowerProp) {
+                                $qualityRating = "Baik";
+                            } else {
+                                $qualityRating = "Perlu Cek (Kunci)";
+                            }
+                        }
+
+
+                        $optionAnalysis[$optionCode] = [
+                            'is_correct' => $isCorrectOption,
+                            'total_prop' => $totalProp, // Proporsi total yang memilih opsi ini
+                            'upper_prop' => $upperProp, // Proporsi kelompok atas
+                            'lower_prop' => $lowerProp, // Proporsi kelompok bawah
+                            'effectiveness_score' => $effectivenessScore, // Untuk pengecoh: 0-1, untuk kunci: -1-1
+                            'quality_rating' => $qualityRating, // Penilaian kualitatif
+                        ];
+                    }
+                    $kualitasPengecohItems[$questionId] = [
+                        'options' => $optionAnalysis,
+                        'summary_message' => 'Analisis selesai.'
+                    ];
+                }
+            } else {
+                $kualitasPengecohItems = array_fill_keys($questionIdsWithKeys, [
+                    'summary_message' => 'Tidak cukup peserta untuk analisis kelompok.',
+                    'options' => []
+                ]);
+            }
+
+
             return response()->json([
-                'message' => 'Analisis validitas dan reliabilitas berhasil dihitung.',
+                'message' => 'Analisis validitas, reliabilitas, tingkat kesukaran, daya beda, dan kualitas pengecoh berhasil dihitung.',
                 'status' => 'success',
                 'analisis' => [
                     'validitas_soal' => $validitasItems,
                     'reliabilitas_tes' => $alpha,
-                    'k_items' => $numberOfItems,
-                    'sum_of_item_variances' => $sumOfItemVariances,
-                    'total_score_variance' => $totalScoreVariance,
-                    // Tambahan untuk debugging, bisa dihapus di production
-                    'all_kode_peserta_sorted' => $allKodePeserta,
-                    'item_scores_for_correlation' => $itemScoresForCorrelation,
-                    'total_scores_for_correlation' => $totalScoresArrayForCorrelation,
+                    'tingkat_kesukaran' => $tingkatKesukaranItems,
+                    'daya_beda' => $dayaBedaItems,
+                    'kualitas_pengecoh' => $kualitasPengecohItems, // <-- BARU
+                    // Tambahan informasi untuk debugging/detail jika perlu
+                    // 'k_items' => $numberOfItems,
+                    // 'sum_of_item_variances' => $sumOfItemVariances,
+                    // 'total_score_variance' => $totalScoreVariance,
+                    // 'all_kode_peserta_sorted' => $allKodePeserta,
+                    // 'item_scores_for_correlation' => $itemScoresForCorrelation,
+                    // 'total_scores_for_correlation' => $totalScoresArrayForCorrelation,
+                    // 'participant_total_scores_raw' => $participantTotalScores,
+                    // 'upper_group_members' => $upperGroup ?? [],
+                    // 'lower_group_members' => $lowerGroup ?? [],
                 ],
             ], 200);
-
         } catch (\Exception $e) {
             \Log::error('Gagal menghitung analisis: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             return response()->json([
@@ -189,8 +353,6 @@ class ResultController extends Controller
 
     /**
      * Fungsi pembantu untuk menghitung Pearson Correlation Coefficient.
-     * x dan y adalah array numerik dengan panjang yang sama.
-     * @param bool $useSampleVariance Jika true, akan menggunakan standar deviasi sampel dalam perhitungan denominator.
      */
     private function calculatePearsonCorrelation(array $x, array $y, bool $useSampleVariance = false): ?float
     {
@@ -212,28 +374,13 @@ class ResultController extends Controller
         }
 
         $numerator = ($n * $sumXY) - ($sumX * $sumY);
-
-        // Denominator (standard definition based on sums of squares)
-        // This implicitly works with N or N-1 based on how N and N-1 are used in std dev
-        // For CORREL in Excel, this form is usually robust if data is consistent.
-        // It relies on the consistency of the variance calculation.
-
-        // Perbaikan: Gunakan standard deviasi yang dihitung dengan parameter $useSampleVariance
         $stdDevX = $this->calculateStandardDeviation($x, $useSampleVariance);
         $stdDevY = $this->calculateStandardDeviation($y, $useSampleVariance);
 
         if ($stdDevX == 0 || $stdDevY == 0) {
             return null; // Hindari pembagian dengan nol jika salah satu varian nol
         }
-
-        // Rumus Pearson: Cov(X,Y) / (StdDev(X) * StdDev(Y))
-        // Cov(X,Y) = (Sum(XY) - Sum(X)Sum(Y)/N) / (N-1) (for sample covariance)
-        // Cov(X,Y) = (Sum(XY) - Sum(X)Sum(Y)/N) / N (for population covariance)
-        // Atau, bisa juga pakai rumus aslinya: (N * Sum(XY) - Sum(X) * Sum(Y)) / sqrt((N * Sum(X^2) - (Sum(X))^2) * (N * Sum(Y^2) - (Sum(Y))^2))
-        // Rumus yang terakhir ini yang paling umum diimplementasikan dan harus cocok dengan CORREL di Excel
-        // jika data inputnya sama persis dan tidak ada pembulatan yang aneh.
-
-        $denominator = sqrt( ($n * $sumX2 - $sumX * $sumX) * ($n * $sumY2 - $sumY * $sumY) );
+        $denominator = sqrt(($n * $sumX2 - $sumX * $sumX) * ($n * $sumY2 - $sumY * $sumY));
 
         if ($denominator == 0) {
             return null;
@@ -250,7 +397,7 @@ class ResultController extends Controller
     {
         $n = count($data);
         if ($n <= 1) {
-            return 0.0; // Varian nol atau tidak terdefinisi untuk data kurang dari 2
+            return 0.0;
         }
 
         $mean = array_sum($data) / $n;
@@ -260,10 +407,10 @@ class ResultController extends Controller
             $sumSquaredDifferences += pow($value - $mean, 2);
         }
 
-        $divisor = $is_sample ? ($n - 1) : $n; // Pembagi berdasarkan populasi atau sampel
+        $divisor = $is_sample ? ($n - 1) : $n;
 
         if ($divisor == 0) {
-             return 0.0; // Hindari pembagian dengan nol jika hanya 1 data dan diminta sampel
+            return 0.0;
         }
 
         return $sumSquaredDifferences / $divisor;
@@ -275,8 +422,7 @@ class ResultController extends Controller
      */
     private function calculateStandardDeviation(array $data, bool $is_sample = false): float
     {
-        // Pastikan varian tidak negatif (bisa terjadi karena floating point error)
         $variance = $this->calculateVariance($data, $is_sample);
-        return sqrt(max(0.0, $variance)); // max(0.0, ...) untuk menghindari sqrt dari angka negatif kecil
+        return sqrt(max(0.0, $variance));
     }
 }
