@@ -1,5 +1,8 @@
 # Analis - Aplikasi Analisis Butir Soal Otomatis
 
+![landing page](https://github.com/fajar-i/tubes-rpl/blob/master/frontend/public/landing.png)
+![result page](https://github.com/fajar-i/tubes-rpl/blob/master/frontend/public/result.png)
+
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/fajar-i/tubes-rpl/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/fajar-i/tubes-rpl.svg?style=social)](https://github.com/fajar-i/tubes-rpl/stargazers)
 
