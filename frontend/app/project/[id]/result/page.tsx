@@ -139,7 +139,7 @@ export default function EditorPage() {
                   <ul className="list-unstyled ps-3">
                     {q.options.map((opt, index) => (
                       <li key={opt.id} className="d-flex justify-content-center align-items-center mb-2">
-                        <div className="mb-0 d-flex flex-row" style={{ marginRight: '30px' }}>{huruf(index)}</div>
+                        <div className="mb-0 d-flex flex-row" style={{ marginRight: '30px' }}>{opt.option_code}</div>
                         <div className="mb-0 ">
                           {opt.text}
                           {opt.is_right ? (
