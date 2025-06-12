@@ -109,7 +109,7 @@ export default function Dokumentasi() {
                         <li>Atur URL API backend Anda (sesuai dengan yang Anda catat sebelumnya):
                             <pre><code>NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api</code></pre>
                         </li>
-                        <li>Pastikan <code>http://127.0.0.1:8000</code> adalah URL server Laravel Anda, dan tambahkan <code>/api</code> di belakangnya jika semua route API Anda diawali dengan <code>/api</code> di Laravel (misalnya, <code>Route::prefix('api')->group(...)</code>).</li>
+                        <li>Pastikan <code>http://127.0.0.1:8000</code> adalah URL server Laravel Anda, dan tambahkan <code>/api</code> di belakangnya jika semua route API Anda diawali dengan <code>/api</code> di Laravel (misalnya, <code>Route::prefix('api')-{">"}group(...)</code>).</li>
                     </ul>
                     <p>4. <strong>Jalankan Server Frontend (Next.js):</strong></p>
                     <ul>
