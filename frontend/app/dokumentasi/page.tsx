@@ -1,4 +1,4 @@
-import "./style.css";
+import "./docstyle.css";
 export default function Dokumentasi() {
     return <>
         <main className="container doc-wrapper">
