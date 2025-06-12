@@ -63,17 +63,20 @@ Pastikan Anda memiliki perangkat lunak berikut terinstal di komputer Anda:
 
 2.  **Instal Dependensi PHP:**
     * Setelah masuk ke direktori `backend`, jalankan perintah berikut untuk menginstal semua library PHP yang dibutuhkan oleh Laravel:
+        
         ```bash
         composer install
         ```
 
 3.  **Konfigurasi Environment (.env):**
     * Salin file `.env.example` menjadi `.env`:
+        
         ```bash
         cp .env.example .env
         ```
     * Buka file `.env` yang baru dibuat di editor teks Anda.
     * Atur **kunci aplikasi (App Key)**:
+        
         ```bash
         php artisan key:generate
         ```
@@ -90,16 +93,19 @@ Pastikan Anda memiliki perangkat lunak berikut terinstal di komputer Anda:
 
 4.  **Jalankan Migrasi Database dan Seeder (Opsional):**
     * Jalankan migrasi untuk membuat tabel-tabel di database Anda:
+        
         ```bash
         php artisan migrate
         ```
     * Jika ada data awal atau dummy yang perlu diisi, jalankan seeder (jika tersedia):
+        
         ```bash
         php artisan db:seed
         ```
 
 5.  **Jalankan Server Backend (API):**
     * Untuk menjalankan server lokal Laravel, gunakan perintah:
+        
         ```bash
         php artisan serve
         ```
@@ -109,12 +115,14 @@ Pastikan Anda memiliki perangkat lunak berikut terinstal di komputer Anda:
 
 1.  **Navigasi ke Direktori Frontend:**
     * Asumsikan Anda sudah mengkloning repositori utama (`tubes-rpl`). Cukup navigasi ke direktori `frontend`:
+        
         ```bash
         cd ../frontend
         ```
 
 2.  **Instal Dependensi JavaScript:**
     * Setelah masuk ke direktori `frontend`, jalankan perintah berikut untuk menginstal semua library JavaScript/Node.js yang dibutuhkan:
+        
         ```bash
         npm install
         # atau jika Anda menggunakan yarn:
@@ -123,6 +131,7 @@ Pastikan Anda memiliki perangkat lunak berikut terinstal di komputer Anda:
 
 3.  **Konfigurasi Environment Frontend (.env.local):**
     * Salin file `.env.example` (jika ada) menjadi `.env.local`:
+        
         ```bash
         cp .env.example .env.local
         ```
@@ -135,6 +144,7 @@ Pastikan Anda memiliki perangkat lunak berikut terinstal di komputer Anda:
 
 4.  **Jalankan Server Frontend (Next.js):**
     * Untuk menjalankan server pengembangan Next.js, gunakan perintah:
+        
         ```bash
         npm run dev
         # atau jika Anda menggunakan yarn:
