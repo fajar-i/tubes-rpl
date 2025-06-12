@@ -55,6 +55,7 @@ Pastikan Anda memiliki perangkat lunak berikut terinstal di komputer Anda:
     * Buka terminal atau Command Prompt Anda.
     * Navigasi ke direktori tempat Anda ingin menyimpan proyek.
     * Unduh source code backend dari repositori GitHub:
+        
         ```bash
         git clone [https://github.com/fajar-i/tubes-rpl.git](https://github.com/fajar-i/tubes-rpl.git)
         cd tubes-rpl/backend
