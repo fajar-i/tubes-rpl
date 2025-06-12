@@ -142,14 +142,20 @@ export default function EditorPage() {
                         <div className="mb-0 d-flex flex-row" style={{ marginRight: '30px' }}>{huruf(index)}</div>
                         <div className="mb-0 ">
                           {opt.text}
+                          {opt.is_right ? (
+                            <span className="ms-2 badge bg-primary">Kunci jawaban</span>
+                          ) : null}
                         </div>
                         {/* Tampilkan Analisis Pengecoh per Opsi */}
                         {analysisResults && analysisResults.kualitas_pengecoh && analysisResults.kualitas_pengecoh[q.id] &&
                           'options' in analysisResults.kualitas_pengecoh[q.id] && analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] && (
                             <div className="distractor-stats ms-auto text-end">
-                              <span className={`badge ms-1 p-2 fw-normal fs-6 ${(analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Sangat Baik' || (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Efektif' ? 'bg-success' :
-                                (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Baik' || (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Cukup Efektif' ? 'bg-warning text-dark' :
-                                  'bg-danger'
+                              <span className={`badge ms-1 p-2 fw-normal fs-6 
+                              ${(analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Sangat Baik'
+                                  || (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Efektif' ? 'bg-success' :
+                                  (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Baik'
+                                    || (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating === 'Cukup Efektif' ? 'bg-warning text-dark' :
+                                    'bg-danger'
                                 }`}>
                                 {(analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).effectiveness_score !== null ? (analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).effectiveness_score!.toFixed(3) : 'N/A'} :&nbsp;
                                 {(analysisResults.kualitas_pengecoh[q.id].options[opt.option_code || ''] as OptionAnalysis).quality_rating}
