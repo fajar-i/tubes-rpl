@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Swal from "sweetalert2";
+import { AxiosInstance } from "@/lib/axios";
 
 type Option = {
   id: number;
@@ -54,7 +55,7 @@ export default function EditorPage() {
 
   const fetchAllQuestions = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/questions`, {
+      const response = await AxiosInstance.get(`/projects/${params.id}/questions`, {
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -76,7 +77,7 @@ export default function EditorPage() {
       ],
     };
 
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/questions/`, newQuestion, {
+    const response = await AxiosInstance.post(`/projects/${params.id}/questions/`, newQuestion, {
       headers: {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${authToken}`
@@ -97,8 +98,8 @@ export default function EditorPage() {
     );
     // 2. Panggil API, tapi jangan panggil fetchAllQuestions()
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/questions/${qId}`,
+      await AxiosInstance.post(
+        `/questions/${qId}`,
         { text: newText, _method: "PUT" },
         {
           headers: {
@@ -135,8 +136,8 @@ export default function EditorPage() {
     );
 
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/options/${oId}`,
+      await AxiosInstance.post(
+        `/options/${oId}`,
         { question_id: qId, text: newText, _method: "PUT" },
         {
           headers: {
@@ -178,8 +179,8 @@ export default function EditorPage() {
     );
 
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/rightOption/${parsedOId}`, // <-- Pastikan ini ID opsi yang benar
+      await AxiosInstance.post(
+        `/rightOption/${parsedOId}`, // <-- Pastikan ini ID opsi yang benar
         { _method: "PUT" },
         {
           headers: {
@@ -242,8 +243,8 @@ export default function EditorPage() {
     );
     // Panggil API untuk simpan opsi
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/options/`,
+      const response = await AxiosInstance.post(
+        `/options/`,
         {
           question_id: qId,
           text: "Pilihan baru",

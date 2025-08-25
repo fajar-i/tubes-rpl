@@ -8,6 +8,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Spreadsheet, Worksheet } from "@jspreadsheet-ce/react";
 import React, { useRef, useEffect, useState } from "react";
 import toast from 'react-hot-toast'; // Pastikan Anda mengimpor toast
+import { AxiosInstance } from "@/lib/axios";
 
 type Question = {
     id: number;
@@ -47,12 +48,12 @@ export default function Jawaban() {
 
         const fetchData = async () => {
             try {
-                const questionsResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/questions`, {
+                const questionsResponse = await AxiosInstance.get(`/projects/${params.id}/questions`, {
                     headers: { Authorization: `Bearer ${authToken}` }
                 });
                 setQuestions(questionsResponse.data.questions);
 
-                const answersResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/answers`, {
+                const answersResponse = await AxiosInstance.get(`/projects/${params.id}/answers`, {
                     headers: { Authorization: `Bearer ${authToken}` }
                 });
 
@@ -145,8 +146,8 @@ export default function Jawaban() {
         console.log("Payload yang akan dikirim:", payload);
 
         try {
-            const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/answers`,
+            const response = await AxiosInstance.post(
+                `/projects/${params.id}/answers`,
                 payload,
                 {
                     headers: {

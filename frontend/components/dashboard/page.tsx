@@ -6,14 +6,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
-interface ProductType {
-    id?: number,
-    title?: string,
-    description?: string,
-    cost?: number,
-    image_Url?: string | null,
-    banner_image?: File | null
-}
+import { ProductType } from "@/types";
 
 const Dashboard: React.FC = () => {
     const router = useRouter();

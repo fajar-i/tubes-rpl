@@ -4,52 +4,9 @@ import Loader from "@/components/Loader";
 import React, { useEffect, useState, useRef } from 'react';
 import { myAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
-import axios from 'axios';
 import toast from 'react-hot-toast'; // Pastikan sudah diimpor
-
-type Option = {
-  id: number;
-  text: string;
-  is_right?: boolean; // is_right bisa jadi undefined jika tidak selalu ada
-  option_code?: string; // Tambahkan ini jika API questions mengembalikan option_code
-};
-
-type Question = {
-  id: number;
-  text: string;
-  options: Option[];
-};
-
-// --- Definisi Tipe untuk Hasil Analisis (sesuai output Backend) ---
-type OptionAnalysis = {
-  is_correct: boolean;
-  total_prop: number;
-  upper_prop: number;
-  lower_prop: number;
-  effectiveness_score: number | null;
-  quality_rating: string;
-};
-
-type QuestionDistractorAnalysis = {
-  [optionCode: string]: OptionAnalysis;
-};
-
-type AnalysisResults = {
-  validitas_soal: { [key: number]: number | null };
-  reliabilitas_tes: number | null;
-  tingkat_kesukaran: { [key: number]: number | null };
-  daya_beda: { [key: number]: number | null };
-  kualitas_pengecoh: {
-    [questionId: number]: {
-      options: QuestionDistractorAnalysis;
-      summary_message: string;
-    } | { summary_message: string; options: [] };
-  };
-  // Tambahan dari backend jika perlu ditampilkan
-  k_items?: number;
-  sum_of_item_variances?: number;
-  total_score_variance?: number;
-};
+import { AnalysisResults, OptionAnalysis, Question } from "@/types";
+import { AxiosInstance } from "@/lib/axios";
 
 export default function EditorPage() {
   const router = useRouter();
@@ -88,7 +45,7 @@ export default function EditorPage() {
 
   const fetchAllQuestions = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/questions`, {
+      const response = await AxiosInstance.get(`/projects/${params.id}/questions`, {
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -103,7 +60,7 @@ export default function EditorPage() {
   // --- Fungsi Baru untuk Mengambil Hasil Analisis ---
   const fetchAnalysisResults = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/projects/${params.id}/result`, {
+      const response = await AxiosInstance.get(`/projects/${params.id}/result`, {
         headers: {
           Authorization: `Bearer ${authToken}`
         }

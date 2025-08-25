@@ -3,16 +3,12 @@ import React, { useEffect, useState } from "react";
 import { myAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-interface formData {
-    name?: string;
-    email: string;
-    password: string;
-    password_confirmation?: string;
-}
+import { RegisterData } from "@/types";
+
 const Auth: React.FC = () => {
     const router = useRouter();
     const [isLogin, setIsLogin] = useState<boolean>(true);
-    const [formData, setFormData] = useState<formData>({
+    const [formData, setFormData] = useState<RegisterData>({
         name: "",
         email: "",
         password: "",

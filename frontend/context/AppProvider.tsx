@@ -5,17 +5,11 @@ import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Cookies from 'js-cookie';
 import { useRouter } from "next/navigation";
-interface AppProviderType {
-    login: (email: string, password: string) => Promise<void>,
-    register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
-    isLoading: boolean,
-    authToken: string | null,
-    setIsLoading: (loading: boolean) => void,
-    logout: () => void
-}
+import { AppProviderType } from "@/types";
+import { AxiosInstance } from "@/lib/axios";
 
 const AppContext = createContext<AppProviderType | undefined>(undefined)
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+
 export const AppProvider = ({
     children
 }: {
@@ -37,7 +31,7 @@ export const AppProvider = ({
         setIsLoading(true)
         try {
             setIsLoading(true);
-            const response = await axios.post(`${API_URL}/login`, { email, password })
+            const response = await AxiosInstance.post(`/login`, { email, password })
 
             if (response.data.status) {
                 Cookies.set("authToken", response.data.token, { expires: 7 });
@@ -57,7 +51,7 @@ export const AppProvider = ({
     const register = async (name: string, email: string, password: string, password_confirmation: string) => {
         setIsLoading(true)
         try {
-            const response = await axios.post(`${API_URL}/register`, { name, email, password, password_confirmation })
+            const response = await AxiosInstance.post(`/register`, { name, email, password, password_confirmation })
             toast.success(response.data.message);
         } catch (error) {
             toast.error("registration failed, username already exist");
@@ -79,7 +73,6 @@ export const AppProvider = ({
         </AppContext.Provider>
     )
 }
-
 
 export const myAppHook = () => {
     const context = useContext(AppContext);
