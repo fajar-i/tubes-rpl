@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
-import Navbar from "@/components/Navbar";
 import { Toaster } from "react-hot-toast";
-import { Istok_Web } from "next/font/google";
 import { AppProvider } from "@/context/AppProvider";
-import "bootstrap/dist/css/bootstrap.min.css"
-import "./styles.css";
-import { Poppins } from 'next/font/google';
+import "./globals.css";
+import { Geist, Istok_Web } from 'next/font/google';
 
-const poppins = Poppins({
+const geist = Geist({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-poppins',
+  variable: '--font-geist',
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 });
 
-const istok_Web = Istok_Web({
+const istok_web = Istok_Web({
   weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-istok_Web',
@@ -32,14 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={poppins.variable}>
-      <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons" />
-      </head>
-      <body className={poppins.variable}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geist.variable} ${istok_web.variable}`}>
         <AppProvider>
           <Toaster />
-          <Navbar />
           {children}
         </AppProvider>
       </body>

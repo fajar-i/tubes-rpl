@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { myAppHook } from "@/context/AppProvider";
+import { useMyAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -11,7 +11,7 @@ import { ProductType } from "@/types";
 const Dashboard: React.FC = () => {
     const router = useRouter();
     const fileRef = React.useRef<HTMLInputElement>(null);
-    const { isLoading, authToken } = myAppHook();
+    const { authToken } = useMyAppHook();
     const [products, setProducts] = useState<ProductType[]>([]);
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [formData, setFormData] = useState<ProductType>({
@@ -96,7 +96,7 @@ const Dashboard: React.FC = () => {
             console.log(error);
         }
     }
-    const handleDeleteProduct = async (id: number) => {
+    const handleDeleteProduct = async (id: number | undefined) => {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -129,36 +129,36 @@ const Dashboard: React.FC = () => {
         });
     }
     return <>
-        <div className="container mt-4">
-            <div className="row">
-                <div className="col-md-6">
-                    <div className="card p-4">
-                        <h4>{isEdit ? "Edit" : "Add"} Product</h4>
+        <div className="container mx-auto mt-8 px-4">
+            <div className="flex flex-wrap -mx-4">
+                <div className="w-full md:w-1/2 px-4 mb-8 md:mb-0">
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h4 className="text-xl font-semibold mb-4">{isEdit ? "Edit" : "Add"} Product</h4>
                         <form onSubmit={handleOnSubmit} >
                             <input
-                                className="form-control mb-2"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                                 name="title"
                                 placeholder="Title"
                                 value={formData.title}
                                 onChange={handleOnChangeEvent}
                                 required />
                             <input
-                                className="form-control mb-2"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                                 name="description"
                                 placeholder="Description"
                                 value={formData.description}
                                 onChange={handleOnChangeEvent}
                                 required />
                             <input
-                                className="form-control mb-2"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                                 name="cost"
                                 placeholder="Cost"
                                 type="number"
                                 value={formData.cost}
                                 onChange={handleOnChangeEvent}
                                 required />
-                            <div className="mb-2">
-                                {formData.image_Url && <Image
+                            <div className="mb-4">
+                                {formData.image_Url && typeof formData.image_Url === 'string' && <Image
                                     src={formData.image_Url}
                                     alt="Preview"
                                     id="bannerPreview"
@@ -166,52 +166,52 @@ const Dashboard: React.FC = () => {
                                 }
                             </div>
                             <input
-                                className="form-control mb-2"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                                 type="file"
                                 ref={fileRef}
                                 onChange={handleOnChangeEvent}
                                 id="bannerInput" />
-                            <button className="btn btn-primary" type="submit">{isEdit ? "Update" : "Add"} Product</button>
+                            <button className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300" type="submit">{isEdit ? "Update" : "Add"} Product</button>
                         </form>
                     </div>
                 </div>
 
-                <div className="col-md-6">
-                    <table className="table table-bordered">
-                        <thead>
+                <div className="w-full md:w-1/2 px-4">
+                    <table className="min-w-full bg-white border border-gray-200">
+                        <thead className="bg-gray-100">
                             <tr>
-                                <th>ID</th>
-                                <th>Title</th>
-                                <th>Banner</th>
-                                <th>Cost</th>
-                                <th>Actions</th>
+                                <th className="py-3 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-600">ID</th>
+                                <th className="py-3 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-600">Title</th>
+                                <th className="py-3 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-600">Banner</th>
+                                <th className="py-3 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-600">Cost</th>
+                                <th className="py-3 px-4 border-b border-gray-200 text-left text-sm font-semibold text-gray-600">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {
-                                products.map((singleProduct, index) => (
+                                products.map((singleProduct) => (
                                     <tr key={singleProduct.id}>
-                                        <td>{singleProduct.id}</td>
-                                        <td>{singleProduct.title}</td>
-                                        <td>
+                                        <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-700">{singleProduct.id}</td>
+                                        <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-700">{singleProduct.title}</td>
+                                        <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-700">
                                             {
-                                                singleProduct.banner_image ?
+                                                singleProduct.banner_image && typeof singleProduct.banner_image === 'string' ?
                                                     <Image src={singleProduct.banner_image} alt="Product" width={50} height={50} /> : "no image"
                                             }
                                         </td>
-                                        <td>${singleProduct.cost}</td>
-                                        <td>
-                                            <button className="btn btn-warning btn-sm me-2" onClick={() => {
+                                        <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-700">${singleProduct.cost}</td>
+                                        <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-700">
+                                            <button className="bg-yellow-500 text-white py-1 px-3 rounded-md text-sm hover:bg-yellow-600 transition-colors duration-300 mr-2" onClick={() => {
                                                 setFormData({
                                                     id: singleProduct.id,
                                                     title: singleProduct.title,
-                                                    cost: singleProduct.cost,
+                                                    cost: singleProduct.cost || 0, // Ensure cost is a number
                                                     description: singleProduct.description,
-                                                    image_Url: singleProduct.banner_image
+                                                    image_Url: singleProduct.banner_image && typeof singleProduct.banner_image === 'string' ? singleProduct.banner_image : ""
                                                 })
                                                 setIsEdit(true)
                                             }}>Edit</button>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteProduct(singleProduct.id)}>Delete</button>
+                                            <button className="bg-red-600 text-white py-1 px-3 rounded-md text-sm hover:bg-red-700 transition-colors duration-300" onClick={() => handleDeleteProduct(singleProduct.id)}>Delete</button>
                                         </td>
                                     </tr>
                                 ))

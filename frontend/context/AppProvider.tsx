@@ -1,10 +1,9 @@
 "use client";
 import Loader from "@/components/Loader";
-import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Cookies from 'js-cookie';
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppProviderType } from "@/types";
 import { AxiosInstance } from "@/lib/axios";
 
@@ -18,15 +17,16 @@ export const AppProvider = ({
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [authToken, setAuthToken] = useState<string | null>(null)
     const router = useRouter()
+    const pathname = usePathname();
+
     useEffect(() => {
         const token = Cookies.get("authToken")
         if (token) {
             setAuthToken(token);
-        } else {
-            router.push("/auth");
         }
         setIsLoading(false);
-    })
+    }, [pathname, router]);
+    
     const login = async (email: string, password: string) => {
         setIsLoading(true)
         try {
@@ -74,7 +74,7 @@ export const AppProvider = ({
     )
 }
 
-export const myAppHook = () => {
+export const useMyAppHook = () => {
     const context = useContext(AppContext);
     if (!context) throw new Error("Context will be wrapped inside AppProvider")
     return context
