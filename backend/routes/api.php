@@ -7,6 +7,7 @@ use App\Http\Controllers\OptionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ResultController;
+use App\Http\Controllers\GeminiController;
 
 Route::post('register',  [AuthController::class, "register"]);
 Route::post('login',  [AuthController::class, "login"]);
@@ -24,5 +25,6 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::apiResource("questions", QuestionController::class);
         Route::apiResource("options", OptionController::class);
         Route::get('/projects/{project}/result', [ResultController::class, 'getAnalisis']);
+        Route::post('/gemini/generate', [GeminiController::class, 'generate']);
     }
 );
