@@ -17,10 +17,11 @@ class GeminiService
 
     public function generateText(string $prompt)
     {
+        $url = $this->apiUrl . '?key=' . $this->apiKey;
+
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
             'Content-Type' => 'application/json',
-        ])->post($this->apiUrl, [
+        ])->post($url, [
             'contents' => [
                 [
                     'parts' => [
@@ -30,10 +31,13 @@ class GeminiService
             ]
         ]);
 
-        if ($response->successful()) {
-            return $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? null;
+        if ($response->failed()) {
+            return "Error: " . $response->body();
         }
 
-        return null;
+        $json = $response->json();
+
+        return $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
     }
+
 }
