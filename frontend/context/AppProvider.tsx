@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Cookies from 'js-cookie';
 import { usePathname, useRouter } from "next/navigation";
-import { AppProviderType } from "@/types";
+import { AppProviderType, UserType } from "@/types"; // Import UserType
 import { AxiosInstance } from "@/lib/axios";
 
 const AppContext = createContext<AppProviderType | undefined>(undefined)
@@ -16,13 +16,32 @@ export const AppProvider = ({
 }) => {
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [authToken, setAuthToken] = useState<string | null>(null)
+    const [user, setUser] = useState<UserType | null>(null); // Added user state
     const router = useRouter()
     const pathname = usePathname();
+
+    const fetchUser = async (token: string) => {
+        try {
+            const response = await AxiosInstance.get(`/profile`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            if (response.data.status) {
+                setUser(response.data.user);
+            }
+        } catch (error) {
+            console.log("Error fetching user data:", error);
+            // Optionally, log out if user data cannot be fetched
+            logout();
+        }
+    };
 
     useEffect(() => {
         const token = Cookies.get("authToken")
         if (token) {
             setAuthToken(token);
+            fetchUser(token); // Fetch user data if token exists
         }
         setIsLoading(false);
     }, [pathname, router]);
@@ -30,15 +49,14 @@ export const AppProvider = ({
     const login = async (email: string, password: string) => {
         setIsLoading(true)
         try {
-            setIsLoading(true);
             const response = await AxiosInstance.post(`/login`, { email, password })
 
             if (response.data.status) {
                 Cookies.set("authToken", response.data.token, { expires: 7 });
                 setAuthToken(response.data.token);
+                await fetchUser(response.data.token); // Fetch user data after successful login
                 router.push("/dashboard");
-                toast.success("Login succesful");
-                setIsLoading(false)
+                toast.success("Login successfull");
             } else {
                 toast.error("Invalid login details");
             }
@@ -62,13 +80,14 @@ export const AppProvider = ({
     }
     const logout = () => {
         setAuthToken(null);
+        setUser(null); // Clear user data on logout
         Cookies.remove("authToken");
         setIsLoading(false);
-        toast.success("user logged out");
+        toast.success("User Logged Out");
         router.push("/auth")
     }
     return (
-        <AppContext.Provider value={{ login, register, isLoading, setIsLoading, authToken, logout }}>
+        <AppContext.Provider value={{ login, register, isLoading, setIsLoading, authToken, logout, user }}>
             {isLoading ? <Loader /> : children}
         </AppContext.Provider>
     )

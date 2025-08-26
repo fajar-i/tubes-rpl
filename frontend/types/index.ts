@@ -1,19 +1,18 @@
+export interface UserType {
+    id: number;
+    name: string;
+    email: string;
+    role: string; // Assuming a 'role' field for the user
+}
+
 export interface AppProviderType {
     login: (email: string, password: string) => Promise<void>,
     register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
     isLoading: boolean,
     authToken: string | null,
     setIsLoading: (loading: boolean) => void,
-    logout: () => void
-}
-
-export interface ProductType {
-    id?: number,
-    title?: string,
-    description?: string,
-    cost?: number,
-    image_Url?: string | null,
-    banner_image?: File | null
+    logout: () => void,
+    user: UserType | null; // Added user to AppProviderType
 }
 
 export interface RegisterData {
@@ -23,17 +22,41 @@ export interface RegisterData {
     password_confirmation?: string;
 }
 
-export type Option = {
+export type OptionForm = {
+  id: number;
+  text: string;
+  is_right?: boolean;
+};
+
+export type QuestionForm = {
+  id: number;
+  text: string;
+  options: OptionForm[];
+};
+
+export type OptionResult = {
   id: number;
   text: string;
   is_right?: boolean; // is_right bisa jadi undefined jika tidak selalu ada
   option_code?: string; // Tambahkan ini jika API questions mengembalikan option_code
 };
 
-export type Question = {
+export type QuestionResult = {
   id: number;
   text: string;
-  options: Option[];
+  options: OptionResult[];
+};
+
+export type QuestionJawaban = {
+    id: number;
+};
+
+export type Project = {
+  nama_ujian: string,
+  mata_pelajaran?: string,
+  kelas?: string,
+  semester?: string,
+  public_id: string,
 };
 
 // --- Definisi Tipe untuk Hasil Analisis (sesuai output Backend) ---

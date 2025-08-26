@@ -17,7 +17,7 @@ const Navbar = () => {
           </Link>
           <ul className="hidden lg:flex lg:items-center space-x-8 text-black text-base">
             <li>
-              <Link href="/fitur" className="hover:text-gray-600">
+              <Link href="#fitur" className="hover:text-gray-600">
                 Fitur
               </Link>
             </li>
@@ -27,7 +27,7 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              <Link href="/faq" className="hover:text-gray-600">
+              <Link href="#faq" className="hover:text-gray-600">
                 FAQ
               </Link>
             </li>

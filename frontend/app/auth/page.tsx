@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useMyAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import { RegisterData } from "@/types";
+import Navbar from "@/components/Navbar";
 
 const Auth: React.FC = () => {
     const router = useRouter();
@@ -14,12 +15,14 @@ const Auth: React.FC = () => {
         password_confirmation: "",
     });
     const { login, register, authToken, isLoading } = useMyAppHook();
+    
     useEffect(() => {
         if (authToken) {
-            router.push("/project");
+            router.push("/dashboard");
             return;
         }
     }, [authToken, isLoading]);
+
     const handleOnChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
@@ -45,6 +48,7 @@ const Auth: React.FC = () => {
     }
     return (
         <>
+            <Navbar />
             <div className="flex items-center justify-center mt-14">
                 <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
                     <h3 className="text-2xl font-bold text-center mb-6">{isLogin ? "Login" : "Register"}</h3>

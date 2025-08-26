@@ -26,3 +26,12 @@ body {
     color-scheme: dark;
   }
 }
+
+.jss_toolbar {
+  display: flex;
+  flex-wrap: wrap;   /* biar item turun ke bawah kalau kepanjangan */
+  gap: 4px;          /* jarak antar tombol */
+  align-items: center;
+  overflow-x: auto;  /* bisa scroll horizontal kalau tetap panjang */
+  white-space: nowrap;
+}
