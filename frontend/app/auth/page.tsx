@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { myAppHook } from "@/context/AppProvider";
+import { useMyAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { RegisterData } from "@/types";
+import Navbar from "@/components/Navbar";
 
 const Auth: React.FC = () => {
     const router = useRouter();
@@ -14,13 +14,15 @@ const Auth: React.FC = () => {
         password: "",
         password_confirmation: "",
     });
-    const { login, register, authToken, isLoading } = myAppHook();
+    const { login, register, authToken, isLoading } = useMyAppHook();
+    
     useEffect(() => {
         if (authToken) {
-            router.push("/project");
+            router.push("/dashboard");
             return;
         }
     }, [authToken, isLoading]);
+
     const handleOnChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
@@ -46,13 +48,14 @@ const Auth: React.FC = () => {
     }
     return (
         <>
-            <div className="container d-flex justify-content-center align-items-center vh-100">
-                <div className="card p-4" style={{ width: "400px" }}>
-                    <h3 className="text-center">{isLogin ? "Login" : "Register"}</h3>
+            <Navbar />
+            <div className="flex items-center justify-center mt-14">
+                <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+                    <h3 className="text-2xl font-bold text-center mb-6">{isLogin ? "Login" : "Register"}</h3>
                     <form onSubmit={handleFormSubmit}>
                         {!isLogin && (
                             <input
-                                className="form-control mb-2"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                                 name="name"
                                 type="text"
                                 value={formData.name}
@@ -62,7 +65,7 @@ const Auth: React.FC = () => {
                             />
                         )}
                         <input
-                            className="form-control mb-2"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                             name="email"
                             type="email"
                             value={formData.email}
@@ -71,7 +74,7 @@ const Auth: React.FC = () => {
                             required
                         />
                         <input
-                            className="form-control mb-2"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                             name="password"
                             type="password"
                             value={formData.password}
@@ -81,7 +84,7 @@ const Auth: React.FC = () => {
                         />
                         {!isLogin && (
                             <input
-                                className="form-control mb-2"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                                 name="password_confirmation"
                                 type="password"
                                 value={formData.password_confirmation}
@@ -90,15 +93,15 @@ const Auth: React.FC = () => {
                                 required
                             />
                         )}
-                        <button className="btn btn-primary w-100" type="submit">
+                        <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300" type="submit">
                             {isLogin ? "Login" : "Register"}
                         </button>
                     </form>
-                    <p className="mt-3 text-center">
+                    <p className="mt-4 text-center text-gray-600">
                         {isLogin ? "Don't have an account? " : "Already have an account? "}
                         <span
                             onClick={() => setIsLogin(!isLogin)}
-                            style={{ cursor: "pointer", color: "#0d6efd" }}
+                            className="cursor-pointer text-blue-600 hover:underline"
                         >
                             {isLogin ? "Register" : "Login"}
                         </span>

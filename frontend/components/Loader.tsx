@@ -1,10 +1,9 @@
 const Loader = () => {
     return <>
-        <div id="loader" className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+        <div id="loader" className="flex justify-center items-center h-screen">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00A1A9]">
+            </div>
         </div>
-    </div> 
     </>
 }
 

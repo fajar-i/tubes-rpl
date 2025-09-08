@@ -1,6 +1,12 @@
+@import "tailwindcss";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+@theme {
+  --font-istok: var(--font-istok_web), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -12,32 +18,20 @@
 
 html,
 body {
-  font-family: var(--font-istok_Web), "Istok Web", sans-serif;
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
+  font-family: var(--font-geist), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
   }
+}
+
+.jss_toolbar {
+  display: flex;
+  flex-wrap: wrap;   /* biar item turun ke bawah kalau kepanjangan */
+  gap: 4px;          /* jarak antar tombol */
+  align-items: center;
+  overflow-x: auto;  /* bisa scroll horizontal kalau tetap panjang */
+  white-space: nowrap;
 }

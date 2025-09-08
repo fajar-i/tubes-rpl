@@ -2,32 +2,20 @@
 
 import Loader from "@/components/Loader";
 import React, { useEffect, useState, useRef } from 'react';
-import { myAppHook } from "@/context/AppProvider";
+import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import Swal from "sweetalert2";
 import { AxiosInstance } from "@/lib/axios";
-
-type Option = {
-  id: number;
-  text: string;
-  is_right?: boolean;
-};
-
-type Question = {
-  id: number;
-  text: string;
-  options: Option[];
-};
+import { OptionForm, QuestionForm } from "@/types";
+import Link from "next/link";
 
 export default function EditorPage() {
-  // const id = usePathname().split('/')[2];
   const router = useRouter();
-  const { authToken } = myAppHook();
+  const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const params = useParams<{ id: any; tag: string; item: string }>()
+  const [questions, setQuestions] = useState<QuestionForm[]>([]);
+  const params = useParams<{ id: string; tag: string; item: string }>();
   const [isRight, setIsRight] = useState<{ [key: string]: number }>({});
   const huruf = (i: number) => { return String.fromCharCode('A'.charCodeAt(0) + i) }
 
@@ -40,16 +28,14 @@ export default function EditorPage() {
     fetchAllQuestions().finally(() => {
       setLoading(false);
     });
-  }, [authToken]);
+  }, [authToken, router]);
 
   useEffect(() => {
     const rightAnswer: { [key: string]: number } = {};
     questions.forEach((q) => {
       const correctOption = q.options.find((o) => o.is_right);
       if (correctOption) { rightAnswer[q.id] = correctOption.id; }
-    }
-    );
-    console.log(isRight)
+    });
     setIsRight(rightAnswer);
   }, [questions]);
 
@@ -59,15 +45,15 @@ export default function EditorPage() {
         headers: {
           Authorization: `Bearer ${authToken}`
         }
-      })
-      setQuestions(response.data.questions)
+      });
+      setQuestions(response.data.questions);
     } catch (error) {
       console.log("fetch all questions error : " + error);
     }
   };
 
   const handleAddQuestion = async () => {
-    const newQuestion: Question = {
+    const newQuestion: QuestionForm = {
       id: Date.now(),
       text: "Soal baru...",
       options: [
@@ -82,21 +68,18 @@ export default function EditorPage() {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${authToken}`
       }
-    })
+    });
     setQuestions((prev) => [...prev, response.data.questions]);
     toast.success(response.data.message);
   };
 
   const handleQuestionBlur = async (qId: number, newText: string) => {
-    // 1. Optimistic update: ubah state lokal dulu
     if (!newText) {
       newText = 'Text harus diisi';
-      console.log(newText)
     }
     setQuestions((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, text: newText } : q))
     );
-    // 2. Panggil API, tapi jangan panggil fetchAllQuestions()
     try {
       await AxiosInstance.post(
         `/questions/${qId}`,
@@ -112,16 +95,13 @@ export default function EditorPage() {
     } catch (e) {
       toast.error("Gagal menyimpan soal");
       console.error(e);
-      // (opsional) rollback state jika error:
       fetchAllQuestions();
     }
-
   };
 
   const handleOptionBlur = async (qId: number, oId: number, newText: string) => {
-    // Optimistic update
     if (!newText) {
-      newText = 'Text harus diisi'
+      newText = 'Text harus diisi';
     }
     setQuestions((prev) =>
       prev.map((q) =>
@@ -150,10 +130,8 @@ export default function EditorPage() {
     } catch (e) {
       toast.error("Gagal menyimpan opsi");
       console.error(e);
-      // (opsional) rollback state jika error:
       fetchAllQuestions();
     }
-
   };
 
   const handleSetIsRight = async (qId: string, oId: string) => {
@@ -180,7 +158,7 @@ export default function EditorPage() {
 
     try {
       await AxiosInstance.post(
-        `/rightOption/${parsedOId}`, // <-- Pastikan ini ID opsi yang benar
+        `/rightOption/${parsedOId}`,
         { _method: "PUT" },
         {
           headers: {
@@ -202,7 +180,7 @@ export default function EditorPage() {
         if (originalCorrectOption) {
           newIsRight[parsedQId] = originalCorrectOption.id;
         } else {
-          delete newIsRight[parsedQId]; // Hapus jika tidak ada jawaban benar sebelumnya
+          delete newIsRight[parsedQId];
         }
         return newIsRight;
       });
@@ -224,10 +202,8 @@ export default function EditorPage() {
   };
 
   const handleAddOption = async (qId: number) => {
-    // temporary ID untuk opsi baru
     const tempId = Date.now();
 
-    // tambahkan opsi baru ke state (Optimistic update)
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === qId
@@ -235,13 +211,12 @@ export default function EditorPage() {
             ...q,
             options: [
               ...q.options,
-              { id: tempId, text: "Pilihan baru", }, // text default
+              { id: tempId, text: "Pilihan baru" },
             ],
           }
           : q
       )
     );
-    // Panggil API untuk simpan opsi
     try {
       const response = await AxiosInstance.post(
         `/options/`,
@@ -256,8 +231,7 @@ export default function EditorPage() {
           },
         }
       );
-      const created: Option = response.data; // { id: realId, text: "Pilihan baru", question_id: qId }
-      // 4. Replace temporary ID dengan ID asli dari server
+      const created: OptionForm = response.data;
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === qId
@@ -265,7 +239,7 @@ export default function EditorPage() {
               ...q,
               options: q.options.map(o =>
                 o.id === tempId
-                  ? { id: created.id, text: created.text, }  // ← pakai created.id & created.text
+                  ? { id: created.id, text: created.text }
                   : o
               ),
             }
@@ -292,16 +266,16 @@ export default function EditorPage() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/${type}/${id}`, {
+          const response = await AxiosInstance.delete(`/${type}/${id}`, {
             headers: {
               Authorization: `Bearer ${authToken}`
             }
-          })
+          });
           if (response.data.status) {
-            toast.success(response.data.message)
+            toast.success(response.data.message);
             fetchAllQuestions();
           }
-        } catch (error) { console.log(error) }
+        } catch (error) { console.log(error); }
       }
     });
   };
@@ -310,80 +284,87 @@ export default function EditorPage() {
     return <Loader />;
   } else {
     return (
-      <div className="container py-4">
-        <div className="row justify-content-center">
-          <div className="col-13 col-sm-11 col-md-9 col-lg-7">
+      <div className="container mx-auto py-4">
+        <h1 className="text-3xl font-bold mb-4">Proyek Form</h1>
+        <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
+          <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-tab" data-tabs-toggle="#default-tab-content" role="tablist">
+            <li className="me-2" role="presentation">
+              <Link href={`/dashboard/project/${params.id}/form`} className="inline-block p-4 border-b-2 rounded-t-lg text-blue-600 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-500 border-blue-600 dark:border-blue-500" id="form-tab" type="button" role="tab" aria-controls="form" aria-selected="true">Form</Link>
+            </li>
+            <li className="me-2" role="presentation">
+              <Link href={`/dashboard/project/${params.id}/jawaban`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="jawaban-tab" type="button" role="tab" aria-controls="jawaban" aria-selected="false">Jawaban</Link>
+            </li>
+            <li className="me-2" role="presentation">
+              <Link href={`/dashboard/project/${params.id}/result`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Result</Link>
+            </li>
+          </ul>
+        </div>
+
+        <div className="flex justify-center">
+          <div className="w-full max-w-3xl">
             {questions.map((q) => (
-              <div key={q.id} className="card mb-4">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <div className="flex-grow-1 me-2">
-                      <EditableText
-                        text={q.text}
-                        onBlur={(newText) => handleQuestionBlur(q.id, newText)}
-                        className="h5 mb-0"
-                      />
-                    </div>
+              <div key={q.id} className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex-grow-1 me-2">
+                    <EditableText
+                      text={q.text}
+                      onBlur={(newText) => handleQuestionBlur(q.id, newText)}
+                      className="text-lg font-semibold"
+                    />
                   </div>
-                  <ul className="list-unstyled ps-3">
-                    {q.options.map((opt, index) => (
-
-                      <li key={opt.id} className="d-flex justify-content-center align-items-center mb-2">
-                        <div className="my-3 mb-0 d-flex flex-row" style={{ marginRight: '30px' }}>{huruf(index)}</div>
-                        <div className="flex-grow-1 me-2">
-                          <EditableText
-                            text={opt.text}
-                            onBlur={(newText) => handleOptionBlur(q.id, opt.id, newText)}
-                            className="mb-0"
-                          />
-                        </div>
-                        <button
-                          className="btn btn-sm btn-danger" style={{ minWidth: '100px' }}
-                          onClick={() => handleDelete(opt.id, "options")}
-                        >
-                          Delete option
-                        </button>
-                      </li>
-                    ))}
-
-                    <li
-                      className="d-flex justify-content-between align-items-center pt-3"
-                      style={{ cursor: "pointer" }}
-                    >
-                      <span onClick={() => handleAddOption(q.id)} className="text-primary fst-italic"> + Tambah Pilihan</span>
-                      <label htmlFor={`${q.id}`}>Kunci jawaban :</label>
-
-                      <select
-                        id={`${q.id}`}
-                        value={isRight[q.id]}
-                        className="form-select input-small w-25"
-                        onChange={(e) => handleSetIsRight(e.target.id, e.target.value)}
-                      >
-                        {q.options.map((opt, index) => (
-                          <option
-                            key={opt.id}
-                            value={opt.id}
-                          >
-                            {huruf(index)}. {opt.text}
-                          </option>
-                        ))}
-                      </select>
+                </div>
+                <ul className="list-none pl-3">
+                  {q.options.map((opt, index) => (
+                    <li key={opt.id} className="flex items-center mb-2">
+                      <div className="mr-4 text-gray-700 dark:text-gray-300">{huruf(index)}</div>
+                      <div className="flex-grow-1 mr-2">
+                        <EditableText
+                          text={opt.text}
+                          onBlur={(newText) => handleOptionBlur(q.id, opt.id, newText)}
+                          className="text-base"
+                        />
+                      </div>
                       <button
-                        className="btn btn-sm btn-danger"
-                        style={{ minWidth: '130px' }}
-                        onClick={() => handleDelete(q.id, "questions")}
+                        className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 min-w-[100px]"
+                        onClick={() => handleDelete(opt.id, "options")}
                       >
-                        Delete question
+                        Delete option
                       </button>
                     </li>
-                  </ul>
-                </div>
+                  ))}
+
+                  <li className="flex justify-between items-center pt-3 cursor-pointer">
+                    <span onClick={() => handleAddOption(q.id)} className="text-blue-600 italic hover:underline"> + Tambah Pilihan</span>
+                    <label htmlFor={`${q.id}`} className="text-gray-700 dark:text-gray-300">Kunci jawaban :</label>
+                    <select
+                      id={`${q.id}`}
+                      value={isRight[q.id]}
+                      className="form-select w-1/4 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white"
+                      onChange={(e) => handleSetIsRight(e.target.id, e.target.value)}
+                    >
+                      {q.options.map((opt, index) => (
+                        <option
+                          key={opt.id}
+                          value={opt.id}
+                        >
+                          {huruf(index)}. {opt.text}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 min-w-[130px]"
+                      onClick={() => handleDelete(q.id, "questions")}
+                    >
+                      Delete question
+                    </button>
+                  </li>
+                </ul>
               </div>
             ))}
-            <div className="text-center">
+            <div className="text-center mt-4">
               <button
                 onClick={handleAddQuestion}
-                className="btn btn-primary"
+                className="px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
               >
                 + Tambah Soal
               </button>
@@ -415,7 +396,7 @@ function EditableText({
 
   const handleBlur = () => {
     setIsEditing(false);
-    if (!value) setValue('Text harus diisi')
+    if (!value) setValue('Text harus diisi');
     if (value !== text) onBlur(value);
   };
 
@@ -425,14 +406,11 @@ function EditableText({
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onBlur={handleBlur}
-      className={`form-control ${className}`}
+      className={`w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white ${className}`}
     />
   ) : (
-    <div className={`border-bottom my-3 ${className} d-flex flex-row`}>
-      {/* {isOption ? (<input type="radio" name={`${name}`} className={`form-check-input me-3`} onClick={() => console.log(value)} />) : undefined} */}
-      <div onClick={handleClick} style={{ cursor: 'pointer' }}>
-        {text || 'Text harus diisi'}
-      </div>
+    <div onClick={handleClick} className={`cursor-pointer border-b border-gray-300 dark:border-gray-600 py-1 ${className}`}>
+      {text || 'Text harus diisi'}
     </div>
   );
 }
