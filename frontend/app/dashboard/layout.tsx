@@ -21,13 +21,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   }, [authToken, router]);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <Sidebar />
-      <div className="flex-1"> {/* Adjust margin-left to match sidebar width */}
-        <Header userEmail={user?.email || "user@example.com"} userRole={user?.role || "Guru"} /> {/* Pass user data */}
-        <main className="p-6">
-          {children}
-        </main>
+      <div className="flex-1 lg:ml-64"> {/* Add margin to match sidebar width */}
+        <div className="flex flex-col h-full">
+          <Header userEmail={user?.email || "user@example.com"} userRole={user?.role || "Guru"} />
+          <main className="flex-1 overflow-y-auto p-6">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

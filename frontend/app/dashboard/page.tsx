@@ -2,6 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import ProjectListDashboard from "@/components/ProjectList"; // Import ProjectListDashboard
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 const Dashboard: React.FC = () => {
   return (
@@ -15,20 +16,7 @@ const Dashboard: React.FC = () => {
           href={"/dashboard/project"}
           className="flex flex-col items-center justify-center h-full w-full"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-12 h-12 mb-2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
+          <PlusIcon width={60} height={60}/>
           <span className="text-xl font-semibold">
             Buat project evaluasi baru
           </span>
