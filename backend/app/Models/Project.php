@@ -34,4 +34,8 @@ class Project extends Model
     {
         return $this->hasMany(Question::class);
     }
+    public function materials()
+    {
+        return $this->hasMany(Material::class);
+    }
 }

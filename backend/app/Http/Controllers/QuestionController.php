@@ -5,9 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Question;
 use Illuminate\Http\Request;
+use App\Services\GeminiService;
+use App\Models\Material;
 
 class QuestionController extends Controller
 {
+    protected $gemini;
+
+    public function __construct(GeminiService $gemini)
+    {
+        $this->gemini = $gemini;
+    }
+
     public function indexByProject(Project $project)
     {
         $questions = $project->questions()->with('options')->get();
@@ -40,6 +49,26 @@ class QuestionController extends Controller
                 ]);
             }
         }
+
+        // Validasi dengan Gemini (Kalau ada yang misspersepsi, kasih tau cuy)
+        $materi = Material::where('project_id', $project->id)->first();
+        if ($materi) {
+            $prompt = "Validasi soal berikut terhadap materi ajar.\n
+            Soal: \"{$question->text}\"\n
+            Materi: \"{$materi->content}\"\n
+            Jawab dengan format JSON: {\"is_valid\": true/false, \"note\": \"penjelasan singkat\"}";
+
+            $result = $this->gemini->generateText($prompt);
+
+            // parse JSON dari AI
+            $decoded = json_decode($result, true);
+            if ($decoded) {
+                $question->is_valid = $decoded['is_valid'] ?? null;
+                $question->validation_note = $decoded['note'] ?? null;
+                $question->save();
+            }
+        }
+
         return response()->json([
             "status" => true,
             "message" => "question created succesfully",
