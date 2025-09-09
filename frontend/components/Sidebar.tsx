@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, DocumentTextIcon, ArrowLeftStartOnRectangleIcon, Bars3Icon } from "@heroicons/react/24/outline";
-import { useMyAppHook } from "@/context/AppProvider"; // Import useMyAppHook
+import { useMyAppHook } from "@/context/AppProvider";
+import ProjectHistory from './ProjectHistory';
 
 const Sidebar = () => {
   const pathname = usePathname();
@@ -38,51 +39,64 @@ const Sidebar = () => {
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 p-6 flex flex-col z-50
+        className={`fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50
           transform ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0 transition-transform duration-300 ease-in-out lg:static lg:shadow-none`}
+          lg:translate-x-0 transition-transform duration-300 ease-in-out`}
       >
-        {/* Logo */}
-        <div className="mb-10">
+        {/* Header section - fixed */}
+        <div className="flex-shrink-0 p-5 border-b border-gray-200">
           <Link href="/" className="text-2xl font-istok">
             <span className="text-[#00A1A9] font-semibold">Analis</span>
           </Link>
         </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-grow">
-        <ul className="space-y-4">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname === link.href;
-            return (
-              <li key={link.name}>
-                <Link
-                  href={link.href}
-                  className={`flex items-center p-2 rounded-md text-base font-medium ${
-                    isActive ? "bg-[#E0F7FA] text-[#00A1A9]" : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <Icon className="h-5 w-5 mr-3" />
-                  {link.name}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+        {/* Scrollable content section */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6">
+            {/* Navigation Links */}
+            <nav>
+              <ul className="space-y-4">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+                  return (
+                    <li key={link.name}>
+                      <Link
+                        href={link.href}
+                        className={`flex items-center p-2 rounded-md text-base font-medium ${
+                          isActive ? "bg-[#E0F7FA] text-[#00A1A9]" : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5 mr-3" />
+                        {link.name}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
 
-      {/* Logout Link */}
-      <div className="mt-auto">
-        <button
-          onClick={logout} // Call logout function
-          className="flex items-center p-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 w-full cursor-pointer"
-        >
-          <ArrowLeftStartOnRectangleIcon className="h-5 w-5 mr-3" />
-          Logout
-        </button>
-      </div>
-    </aside>
+            {/* Project History */}
+            <div className="mt-8 border-t border-gray-200">
+              <h3 className="px-2 text-base font-medium text-gray-400 mt-3">
+                Riwayat Proyek
+              </h3>
+              <ProjectHistory />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer section - fixed */}
+        <div className="flex-shrink-0 p-6 border-t border-gray-200">
+          <button
+            onClick={logout}
+            className="flex items-center p-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 w-full cursor-pointer"
+          >
+            <ArrowLeftStartOnRectangleIcon className="h-5 w-5 mr-3" />
+            Logout
+          </button>
+        </div>
+      </aside>
     </>
   );
 };

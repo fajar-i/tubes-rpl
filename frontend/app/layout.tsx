@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${istok_web.variable}`}>
+      <body className={`${geist.variable} ${istok_web.variable} bg-white`} suppressHydrationWarning>
         <AppProvider>
           <Toaster />
           {children}

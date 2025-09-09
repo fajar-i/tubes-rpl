@@ -56,7 +56,7 @@ export const AppProvider = ({
                 setAuthToken(response.data.token);
                 await fetchUser(response.data.token); // Fetch user data after successful login
                 router.push("/dashboard");
-                toast.success("Login successfull");
+                toast.success("Login successful");
             } else {
                 toast.error("Invalid login details");
             }
