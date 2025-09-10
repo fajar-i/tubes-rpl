@@ -53,18 +53,13 @@ class QuestionController extends Controller
         // Validasi dengan Gemini (Kalau ada yang misspersepsi, kasih tau cuy)
         $materi = Material::where('project_id', $project->id)->first();
         if ($materi) {
-            $prompt = "Validasi soal berikut terhadap materi ajar.\n
-            Soal: \"{$question->text}\"\n
-            Materi: \"{$materi->content}\"\n
-            Jawab dengan format JSON: {\"is_valid\": true/false, \"note\": \"penjelasan singkat\"}";
+            $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content);
 
-            $result = $this->gemini->generateText($prompt);
-
-            // parse JSON dari AI
             $decoded = json_decode($result, true);
             if ($decoded) {
                 $question->is_valid = $decoded['is_valid'] ?? null;
                 $question->validation_note = $decoded['note'] ?? null;
+                $question->bloom_taxonomy = $decoded['bloom_taxonomy'] ?? null;
                 $question->save();
             }
         }
