@@ -50,26 +50,85 @@ class QuestionController extends Controller
             }
         }
 
-        // Validasi dengan Gemini (Kalau ada yang misspersepsi, kasih tau cuy)
-        $materi = Material::where('project_id', $project->id)->first();
-        if ($materi) {
-            $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content);
-
-            $decoded = json_decode($result, true);
-            if ($decoded) {
-                $question->is_valid = $decoded['is_valid'] ?? null;
-                $question->validation_note = $decoded['note'] ?? null;
-                $question->bloom_taxonomy = $decoded['bloom_taxonomy'] ?? null;
-                $question->save();
-            }
-        }
-
         return response()->json([
             "status" => true,
             "message" => "question created succesfully",
             "questions" => $question->load('options')
         ]);
     }
+
+    public function validateQuestion(Request $request, Question $question)
+    {
+        $materi = Material::where('project_id', $question->project_id)->first();
+
+        if (!$materi) {
+            return response()->json([
+                "status" => false,
+                "message" => "Materi belum tersedia untuk project ini"
+            ], 400);
+        }
+
+        $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content);
+        $decoded = json_decode($result, true);
+
+        if (!$decoded) {
+            return response()->json([
+                "status" => false,
+                "message" => "Format jawaban AI tidak valid",
+                "raw" => $result
+            ], 500);
+        }
+
+        $question->is_valid = $decoded['is_valid'] ?? null;
+        $question->validation_note = $decoded['note'] ?? null;
+        $question->bloom_taxonomy = $decoded['bloom_taxonomy'] ?? null;
+        $question->save();
+
+        return response()->json([
+            "status" => true,
+            "message" => "Soal berhasil divalidasi",
+            "question" => $question
+        ]);
+    }
+
+    public function applySuggestion(Request $request, Question $question)
+    {
+        $request->validate([
+            'action' => 'required|in:accept,reject'
+        ]);
+
+        if ($request->action === 'accept' && $question->ai_suggestion) {
+            // update text soal dengan saran AI
+            $question->update([
+                "text"   => $question->ai_suggestion,
+                "status" => "revised"
+            ]);
+
+            return response()->json([
+                "status" => true,
+                "message" => "Saran AI diterima & soal diperbarui",
+                "question" => $question
+            ]);
+        }
+
+        if ($request->action === 'reject') {
+            $question->update([
+                "status" => "validated" // tetap valid tapi tanpa revisi
+            ]);
+
+            return response()->json([
+                "status" => true,
+                "message" => "Saran AI ditolak, soal tetap sama",
+                "question" => $question
+            ]);
+        }
+
+        return response()->json([
+            "status" => false,
+            "message" => "Tidak ada saran AI untuk diterapkan"
+        ], 400);
+    }
+
 
     // public function show(Question $question)
     // {
