@@ -90,6 +90,9 @@ export default function EditorPage() {
             <li className="me-2" role="presentation">
               <Link href={`/dashboard/project/${params.id}/result`} className="inline-block p-4 border-b-2 rounded-t-lg text-blue-600 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-500 border-blue-600 dark:border-blue-500" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="true">Result</Link>
             </li>
+            <li className="me-2" role="presentation">
+              <Link href={`/dashboard/project/${params.id}/analisis_ai`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Analisis AI</Link>
+            </li>
           </ul>
         </div>
 

@@ -182,6 +182,9 @@ export default function Jawaban() {
             <li className="me-2" role="presentation">
               <Link href={`/dashboard/project/${params.id}/result`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Result</Link>
             </li>
+            <li className="me-2" role="presentation">
+              <Link href={`/dashboard/project/${params.id}/analisis_ai`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Analisis AI</Link>
+            </li>
           </ul>
         </div>
         <div className="flex flex-col items-center justify-center overflow-x-auto"> {/* Added overflow-x-auto */}

@@ -91,43 +91,44 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function applySuggestion(Request $request, Question $question)
-    {
-        $request->validate([
-            'action' => 'required|in:accept,reject'
-        ]);
+    // Gak jadi di pake
+    // public function applySuggestion(Request $request, Question $question)
+    // {
+    //     $request->validate([
+    //         'action' => 'required|in:accept,reject'
+    //     ]);
 
-        if ($request->action === 'accept' && $question->ai_suggestion) {
-            // update text soal dengan saran AI
-            $question->update([
-                "text"   => $question->ai_suggestion,
-                "status" => "revised"
-            ]);
+    //     if ($request->action === 'accept' && $question->ai_suggestion) {
+    //         // update text soal dengan saran AI
+    //         $question->update([
+    //             "text"   => $question->ai_suggestion,
+    //             "status" => "revised"
+    //         ]);
 
-            return response()->json([
-                "status" => true,
-                "message" => "Saran AI diterima & soal diperbarui",
-                "question" => $question
-            ]);
-        }
+    //         return response()->json([
+    //             "status" => true,
+    //             "message" => "Saran AI diterima & soal diperbarui",
+    //             "question" => $question
+    //         ]);
+    //     }
 
-        if ($request->action === 'reject') {
-            $question->update([
-                "status" => "validated" // tetap valid tapi tanpa revisi
-            ]);
+    //     if ($request->action === 'reject') {
+    //         $question->update([
+    //             "status" => "validated" // tetap valid tapi tanpa revisi
+    //         ]);
 
-            return response()->json([
-                "status" => true,
-                "message" => "Saran AI ditolak, soal tetap sama",
-                "question" => $question
-            ]);
-        }
+    //         return response()->json([
+    //             "status" => true,
+    //             "message" => "Saran AI ditolak, soal tetap sama",
+    //             "question" => $question
+    //         ]);
+    //     }
 
-        return response()->json([
-            "status" => false,
-            "message" => "Tidak ada saran AI untuk diterapkan"
-        ], 400);
-    }
+    //     return response()->json([
+    //         "status" => false,
+    //         "message" => "Tidak ada saran AI untuk diterapkan"
+    //     ], 400);
+    // }
 
 
     // public function show(Question $question)

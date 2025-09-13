@@ -32,6 +32,5 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::get('/projects/{project}/result', [ResultController::class, 'getAnalisis']);
         Route::post('/gemini/generate', [GeminiController::class, 'generate']);
         Route::post('/question/{question}/validate', [QuestionController::class, 'validateQuestion']);
-        Route::post('/questions/{question}/apply-suggestion', [QuestionController::class, 'applySuggestion']);
     }
 );
