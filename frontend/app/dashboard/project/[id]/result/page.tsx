@@ -7,7 +7,6 @@ import { useParams, useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
 import { AnalysisResults, OptionAnalysis, QuestionDistractorAnalysis, QuestionResult } from "@/types";
 import { AxiosInstance } from "@/lib/axios";
-import Link from "next/link";
 
 export default function EditorPage() {
   const router = useRouter();
@@ -77,25 +76,7 @@ export default function EditorPage() {
     return <Loader />;
   } else {
     return (
-      <div className="container mx-auto py-4">
-         <h1 className="text-3xl font-bold mb-3">Hasil</h1>
-        <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
-          <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-tab" data-tabs-toggle="#default-tab-content" role="tablist">
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/form`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="form-tab" type="button" role="tab" aria-controls="form" aria-selected="false">Form</Link>
-            </li>
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/jawaban`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="jawaban-tab" type="button" role="tab" aria-controls="jawaban" aria-selected="false">Jawaban</Link>
-            </li>
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/result`} className="inline-block p-4 border-b-2 rounded-t-lg text-blue-600 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-500 border-blue-600 dark:border-blue-500" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="true">Result</Link>
-            </li>
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/analisis_ai`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Analisis AI</Link>
-            </li>
-          </ul>
-        </div>
-
+      <>
         <div className="flex justify-center">
           <div className="w-full max-w-3xl">
             {questions.map((q) => (
@@ -172,7 +153,7 @@ export default function EditorPage() {
             )}
           </div>
         </div>
-      </div>
+      </>
     );
   }
 }

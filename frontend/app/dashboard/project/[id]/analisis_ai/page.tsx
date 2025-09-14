@@ -6,7 +6,6 @@ import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
-import Link from "next/link";
 
 type QuestionType = {
   id: number;
@@ -108,26 +107,7 @@ export default function AnalisisAIPage() {
   if (loadingPage) return <Loader />;
 
   return (
-    <div className="container mx-auto py-4">
-      <h1 className="text-3xl font-bold mb-3">Analisis AI</h1>
-
-      <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
-        <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
-          <li className="me-2">
-            <Link href={`/dashboard/project/${projectId}/form`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">Form</Link>
-          </li>
-          <li className="me-2">
-            <Link href={`/dashboard/project/${projectId}/jawaban`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">Jawaban</Link>
-          </li>
-          <li className="me-2">
-            <Link href={`/dashboard/project/${projectId}/result`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">Result</Link>
-          </li>
-          <li className="me-2">
-            <Link href={`/dashboard/project/${projectId}/analisis_ai`} className="inline-block p-4 border-b-2 rounded-t-lg text-blue-600 border-blue-600">Analisis AI</Link>
-          </li>
-        </ul>
-      </div>
-
+    <>
       {/* grid dua kolom (kiri: original, kanan: suggestion) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {questions.map((q) => (
@@ -191,6 +171,6 @@ export default function AnalisisAIPage() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

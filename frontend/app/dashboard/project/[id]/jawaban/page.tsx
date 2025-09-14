@@ -10,7 +10,6 @@ import React, { useRef, useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { AxiosInstance } from "@/lib/axios";
 import { QuestionJawaban } from "@/types";
-import Link from "next/link";
 
 export default function Jawaban() {
   const [loading, setLoading] = useState(true);
@@ -169,24 +168,7 @@ export default function Jawaban() {
     const currentDisplayedRows = initialSpreadsheetData.length > 0 ? initialSpreadsheetData.length : kodePesertaList.length;
 
     return (
-      <div className="container mx-auto py-4">
-        <h1 className="text-3xl font-bold mb-2">Jawaban</h1>
-        <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
-          <ul className="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-tab" data-tabs-toggle="#default-tab-content" role="tablist">
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/form`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="form-tab" type="button" role="tab" aria-controls="form" aria-selected="false">Form</Link>
-            </li>
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/jawaban`} className="inline-block p-4 border-b-2 rounded-t-lg text-blue-600 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-500 border-blue-600 dark:border-blue-500" id="jawaban-tab" type="button" role="tab" aria-controls="jawaban" aria-selected="true">Jawaban</Link>
-            </li>
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/result`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Result</Link>
-            </li>
-            <li className="me-2" role="presentation">
-              <Link href={`/dashboard/project/${params.id}/analisis_ai`} className="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="result-tab" type="button" role="tab" aria-controls="result" aria-selected="false">Analisis AI</Link>
-            </li>
-          </ul>
-        </div>
+      <>
         <div className="flex flex-col items-center justify-center overflow-x-auto"> {/* Added overflow-x-auto */}
           <div className="min-w-full"> {/* Added min-w-full to ensure it takes full width */}
             <div className="flex space-x-2 mb-4">
@@ -225,7 +207,7 @@ export default function Jawaban() {
             </button>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 }
