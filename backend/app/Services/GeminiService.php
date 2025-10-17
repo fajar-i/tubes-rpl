@@ -8,20 +8,34 @@ class GeminiService
 {
     protected $apiKey;
     protected $apiUrl;
+    protected $defaultModel = 'gemini-2.5-flash'; // Model yang stabil dan direkomendasikan
 
     public function __construct()
     {
+        // Pastikan Anda telah membuat config/services.php seperti di atas
         $this->apiKey = config('services.gemini.key');
         $this->apiUrl = config('services.gemini.url');
     }
 
+    // Mengizinkan penentuan model, default: gemini-2.5-flash
+    protected function buildUrl(string $model = null): string
+    {
+        $model = $model ?? $this->defaultModel;
+        
+        // Endpoint: /v1beta/models/{model}:generateContent
+        $endpoint = "v1beta/models/{$model}:generateContent"; 
+        
+        return "{$this->apiUrl}/{$endpoint}?key={$this->apiKey}";
+    }
+
     public function generateText(string $prompt)
     {
-        $url = $this->apiUrl . '?key=' . $this->apiKey;
+        $url = $this->buildUrl(); // Gunakan URL yang sudah diperbaiki
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($url, [
+            // Payload sudah benar untuk format contents
             'contents' => [
                 [
                     'parts' => [
@@ -37,12 +51,13 @@ class GeminiService
 
         $json = $response->json();
 
-        return $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+        // Pastikan model tidak diblokir
+        return $json['candidates'][0]['content']['parts'][0]['text'] ?? 'Model response blocked or empty.';
     }
 
     public function validateQuestionWithBloom(string $question, string $material)
     {
-        $url = $this->apiUrl . '?key=' . $this->apiKey;
+        $url = $this->buildUrl(); // Gunakan URL yang sudah diperbaiki
 
         $prompt = "Analisis soal berikut berdasarkan materi ajar dan taksonomi Bloom.
 
@@ -80,6 +95,4 @@ class GeminiService
         $json = $response->json();
         return $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
     }
-
-
 }
