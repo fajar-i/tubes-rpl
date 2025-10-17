@@ -5,7 +5,7 @@ import { useMyAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import Loader from "./Loader";
+import Loader from "./ui/Loader";
 import { Project } from "@/types";
 import { AxiosInstance } from "@/lib/axios";
 
@@ -14,17 +14,6 @@ const ProjectList: React.FC = () => {
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
-
-  useEffect(() => {
-    setLoading(true);
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
-    fetchAllProjects().finally(() => {
-      setLoading(false);
-    });
-  }, [authToken, router]);
 
   const fetchAllProjects = async () => {
     try {
@@ -39,6 +28,19 @@ const ProjectList: React.FC = () => {
       toast.error("Failed to fetch projects.");
     }
   };
+  
+  useEffect(() => {
+
+    setLoading(true);
+    if (!authToken) {
+      router.push("/auth");
+      return;
+    }
+    
+    fetchAllProjects().finally(() => {
+      setLoading(false);
+    });
+  }, [authToken, router]);
 
   if (loading) {
     return <Loader />;

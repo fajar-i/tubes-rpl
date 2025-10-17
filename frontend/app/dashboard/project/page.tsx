@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { AxiosInstance } from "@/lib/axios";
-import Loader from "@/components/Loader";
+import Loader from "@/components/ui/Loader";
 import { Project } from "@/types";
 
 const ProjectPage: React.FC = () => {
@@ -16,18 +16,7 @@ const ProjectPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project>();
-
-  useEffect(() => {
-    setLoading(true);
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
-    fetchAllProjects().finally(() => {
-      setLoading(false);
-    });
-  }, [authToken, router]);
-
+  
   const fetchAllProjects = async () => {
     try {
       const response = await AxiosInstance.get(`/projects`, {
@@ -41,6 +30,17 @@ const ProjectPage: React.FC = () => {
       toast.error("Failed to fetch projects.");
     }
   };
+
+  useEffect(() => {
+    setLoading(true);
+    if (!authToken) {
+      router.push("/auth");
+      return;
+    }
+    fetchAllProjects().finally(() => {
+      setLoading(false);
+    });
+  }, [authToken, router]);
 
   const handleAddProject = async () => {
     const newProject: Project = {

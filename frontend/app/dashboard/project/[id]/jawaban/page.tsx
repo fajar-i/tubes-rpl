@@ -1,5 +1,5 @@
 "use client";
-import Loader from "@/components/Loader";
+import Loader from "@/components/ui/Loader";
 import "jspreadsheet-ce/dist/jspreadsheet.css";
 import "jsuites/dist/jsuites.css";
 import axios from 'axios';
@@ -70,7 +70,8 @@ export default function Jawaban() {
     fetchData();
   }, [authToken, params.id, router, minRows]);
 
-  const spreadsheetRef = useRef<any>(null); // Revert to any for simplicity with external library
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const spreadsheetRef = useRef<any>(null);
 
   const handleSave = async () => {
     if (!spreadsheetRef.current) {
