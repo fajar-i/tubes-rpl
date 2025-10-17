@@ -6,6 +6,7 @@ import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
+import { DocumentIcon } from "@heroicons/react/24/outline";
 
 type QuestionType = {
   id: number;
@@ -109,6 +110,14 @@ export default function AnalisisAIPage() {
   return (
     <>
       {/* grid dua kolom (kiri: original, kanan: suggestion) */}
+      <div className="flex-shrink-0 mb-3">
+        <button
+          className="flex items-center px-4 py-2 rounded-md text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
+          >
+          <DocumentIcon className="h-6 w-6 mr-3" />
+          Unggah Materi Ajar
+        </button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {questions.map((q) => (
           <div key={q.id} className="border-2 border-teal-700 rounded-md p-4">

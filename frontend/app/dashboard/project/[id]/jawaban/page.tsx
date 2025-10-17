@@ -10,6 +10,7 @@ import React, { useRef, useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { AxiosInstance } from "@/lib/axios";
 import { QuestionJawaban } from "@/types";
+import { DocumentIcon } from "@heroicons/react/24/outline";
 
 export default function Jawaban() {
   const [loading, setLoading] = useState(true);
@@ -172,6 +173,12 @@ export default function Jawaban() {
         <div className="flex flex-col items-center justify-center overflow-x-auto"> {/* Added overflow-x-auto */}
           <div className="min-w-full"> {/* Added min-w-full to ensure it takes full width */}
             <div className="flex space-x-2 mb-4">
+              <button
+                className="flex justify-center items-center px-4 py-2 bg-green-500 hover:bg-green-600 rounded-md text-sm font-medium text-white cursor-pointer"
+              >
+                <DocumentIcon className="h-6 w-6 mr-3"/>
+                Impor dari CSV
+              </button>
               <button
                 onClick={() => spreadsheetRef.current?.[0]?.undo()}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium"

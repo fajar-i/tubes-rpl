@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import toast from 'react-hot-toast';
 import { AnalysisResults, OptionAnalysis, QuestionDistractorAnalysis, QuestionResult } from "@/types";
 import { AxiosInstance } from "@/lib/axios";
+import { DocumentIcon } from "@heroicons/react/24/outline";
 
 export default function EditorPage() {
   const router = useRouter();
@@ -64,7 +65,6 @@ export default function EditorPage() {
         }
       });
       setAnalysisResults(response.data.analisis);
-      toast.success('Hasil analisis ditemukan');
       console.log("Analisis berhasil dimuat:", response.data.analisis);
     } catch (error) {
       console.error("Fetch analysis results error:", error);
@@ -77,6 +77,14 @@ export default function EditorPage() {
   } else {
     return (
       <>
+        <div className="flex-shrink-0">
+          <button
+            className="flex items-center px-4 py-2 rounded-md text-base font-medium text-white bg-red-500 hover:bg-red-600 cursor-pointer"
+          >
+            <DocumentIcon className="h-6 w-6 mr-3" />
+            Ekspor ke PDF
+          </button>
+        </div>
         <div className="flex justify-center">
           <div className="w-full max-w-3xl">
             {questions.map((q) => (
