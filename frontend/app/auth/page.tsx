@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useMyAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import { RegisterData } from "@/types";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/layout/Navbar";
 
 const Auth: React.FC = () => {
     const router = useRouter();

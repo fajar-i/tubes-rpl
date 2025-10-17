@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, DocumentTextIcon, ArrowLeftStartOnRectangleIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { useMyAppHook } from "@/context/AppProvider";
-import ProjectHistory from './ProjectHistory';
+import ProjectHistory from '../ProjectHistory';
 
 const Sidebar = () => {
   const pathname = usePathname();

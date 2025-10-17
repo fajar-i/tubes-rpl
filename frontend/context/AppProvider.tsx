@@ -1,5 +1,5 @@
 "use client";
-import Loader from "@/components/Loader";
+import Loader from "@/components/ui/Loader";
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Cookies from 'js-cookie';
