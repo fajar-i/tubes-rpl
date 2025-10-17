@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Loader from "@/components/Loader";
+import Loader from "@/components/ui/Loader";
 import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -12,6 +12,7 @@ type QuestionType = {
   id: number;
   text: string;
   options?: { id?: number; text: string; option_code?: string }[];
+  suggestion?: string;
 };
 
 export default function AnalisisAIPage() {
@@ -22,11 +23,10 @@ export default function AnalisisAIPage() {
 
   const [loadingPage, setLoadingPage] = useState<boolean>(true);
   const [questions, setQuestions] = useState<QuestionType[]>([]);
-  // suggestion text per question: null => belum diminta / dismissed
-  const [suggestions, setSuggestions] = useState<Record<number, string | null>>({});
-  // loading flags per question
-  const [loadingSuggestion, setLoadingSuggestion] = useState<Record<number, boolean>>({});
-  const [savingSuggestion, setSavingSuggestion] = useState<Record<number, boolean>>({});
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [loadingSuggestion, setLoadingSuggestion] = useState<boolean>(false);
+  const [savingSuggestion, setSavingSuggestion] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!authToken) {
@@ -52,134 +52,178 @@ export default function AnalisisAIPage() {
     fetchQuestions();
   }, [authToken, projectId, router]);
 
-  // request suggestion untuk 1 question
-  const getSuggestion = async (q: QuestionType) => {
-    if (!authToken) return;
-    setLoadingSuggestion((s) => ({ ...s, [q.id]: true }));
+  const handleFileUpload = async (file: File) => {
+    if (!authToken || !questions.length) return;
+    
+    setSelectedFile(file);
+    setLoadingSuggestion(true);
 
     try {
-      const res = await AxiosInstance.post(`/question/${q.id}/validate`, {}, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      // Create form data with file and questions
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('project_id', projectId);
+      formData.append('questions', JSON.stringify(questions.map(q => ({ 
+        id: q.id, 
+        text: q.text,
+        options: q.options 
+      }))));
+
+      // Upload file and analyze questions
+      const res = await AxiosInstance.post('/projects/analyze-with-material', formData, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      // backend harus mengembalikan { original, suggestion }
-      setSuggestions((prev) => ({ ...prev, [q.id]: res.data.suggestion ?? null }));
+      setSuggestion(res.data.suggestion);
+      toast.success("Analisis dengan materi berhasil dilakukan");
     } catch (err) {
-      console.error("Gagal minta saran AI:", err);
-      toast.error("Gagal mengambil saran AI");
-      setSuggestions((prev) => ({ ...prev, [q.id]: null }));
+      console.error("Gagal menganalisis dengan materi:", err);
+      toast.error("Gagal menganalisis dengan materi ajar");
+      setSuggestion(null);
+      setSelectedFile(null);
     } finally {
-      setLoadingSuggestion((s) => ({ ...s, [q.id]: false }));
+      setLoadingSuggestion(false);
     }
   };
 
-  // simpan saran ke DB (PUT /questions/{id})
-  const applySuggestion = async (q: QuestionType) => {
-    const suggested = suggestions[q.id];
-    if (!suggested || !authToken) return;
+  const applySuggestions = async () => {
+    if (!suggestion || !authToken) return;
 
-    setSavingSuggestion((s) => ({ ...s, [q.id]: true }));
+    setSavingSuggestion(true);
     try {
-      const res = await AxiosInstance.put(
-        `/questions/${q.id}`,
-        { text: suggested },
+      // Apply suggestions to all questions
+      await AxiosInstance.post(
+        `/projects/${projectId}/apply-suggestions`,
+        { suggestion },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
 
-      // update local questions list
-      setQuestions((prev) => prev.map((qq) => (qq.id === q.id ? res.data.question : qq)));
-      toast.success("Soal diperbarui dengan saran AI ✅");
-      // hide suggestion after saving
-      setSuggestions((prev) => ({ ...prev, [q.id]: null }));
+      // Refresh questions list
+      const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setQuestions(resp.data.questions || []);
+      
+      toast.success("Saran AI berhasil diterapkan ✅");
+      setSuggestion(null);
     } catch (err) {
-      console.error("Gagal simpan saran:", err);
-      toast.error("Gagal menyimpan saran AI");
+      console.error("Gagal menerapkan saran:", err);
+      toast.error("Gagal menerapkan saran AI");
     } finally {
-      setSavingSuggestion((s) => ({ ...s, [q.id]: false }));
+      setSavingSuggestion(false);
     }
   };
 
-  // cancel suggestion di UI (tidak menyentuh DB)
-  const cancelSuggestion = (qId: number) => {
-    setSuggestions((prev) => ({ ...prev, [qId]: null }));
+  const cancelSuggestion = () => {
+    setSuggestion(null);
     toast("Saran AI dibatalkan");
   };
 
   if (loadingPage) return <Loader />;
 
   return (
-    <>
-      {/* grid dua kolom (kiri: original, kanan: suggestion) */}
-      <div className="flex-shrink-0 mb-3">
-        <button
-          className="flex items-center px-4 py-2 rounded-md text-base font-medium text-white bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
-          >
-          <DocumentIcon className="h-6 w-6 mr-3" />
-          Unggah Materi Ajar
-        </button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {questions.map((q) => (
-          <div key={q.id} className="border-2 border-teal-700 rounded-md p-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Original */}
-              <div className="border p-3 rounded">
-                <div className="min-h-[120px]">
-                  <div className="text-sm text-gray-700">{q.text}</div>
-                </div>
-                <div className="mt-4">
-                  <button
-                    onClick={() => toast.success("Soal asli dipertahankan")}
-                    className="px-3 py-2 bg-teal-800 text-white rounded-md"
-                  >
-                    Simpan Soal Asli
-                  </button>
-                </div>
-              </div>
+    <div className="flex justify-center">
+      <div className="w-full max-w-3xl">
+        <div className="mb-6">
+          <p className="text-sm text-gray-600 mb-4">
+            Unggah materi ajar untuk menganalisis kesesuaian soal dengan materi
+          </p>
+          
+          <div className="flex gap-4 items-center">
+            <input
+              type="file"
+              onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              id="fileInput"
+              disabled={loadingSuggestion || !questions.length}
+            />
+            <label
+              htmlFor="fileInput"
+              className={`flex items-center px-4 py-2 rounded-md text-base font-medium text-white 
+                ${questions.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 
+                loadingSuggestion ? 'bg-yellow-400 cursor-wait' : 
+                'bg-yellow-500 hover:bg-yellow-600 cursor-pointer'}`}
+            >
+              <DocumentIcon className="h-6 w-6 mr-3" />
+              {loadingSuggestion ? "Menganalisis..." : "Unggah Materi Ajar"}
+            </label>
+            {selectedFile && (
+              <span className="text-sm text-gray-600">
+                File: {selectedFile.name}
+              </span>
+            )}
+          </div>
+          
+          <p className="text-sm text-gray-500 mt-2">
+            Format yang didukung: PDF, DOC, DOCX
+          </p>
+          {questions.length === 0 && (
+            <p className="text-sm text-red-500 mt-2">
+              Tambahkan soal terlebih dahulu sebelum melakukan analisis
+            </p>
+          )}
+        </div>
 
-              {/* Suggestion */}
-              <div className="border p-3 rounded flex flex-col justify-between">
-                <div>
-                  {/* if suggestion fetched show it, else show button */}
-                  {loadingSuggestion[q.id] ? (
-                    <div>Meminta saran AI...</div>
-                  ) : suggestions[q.id] ? (
-                    <div>
-                      <div className="min-h-[120px] text-sm text-gray-700 mb-3">{suggestions[q.id]}</div>
+        {loadingSuggestion && (
+          <div className="mb-6 flex justify-center items-center gap-2 p-4 bg-blue-50 rounded-lg">
+            <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            <span className="text-blue-600">Menganalisis materi...</span>
+          </div>
+        )}
+
+        {suggestion && (
+          <div className="mb-6 p-4 rounded-lg bg-green-50">
+            <div className="flex justify-between items-start mb-3">
+              <h4 className="text-lg font-medium">Hasil Analisis AI</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={cancelSuggestion}
+                  className="px-3 py-1 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                  disabled={savingSuggestion}
+                >
+                  Batalkan
+                </button>
+                <button
+                  onClick={applySuggestions}
+                  disabled={savingSuggestion}
+                  className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  {savingSuggestion ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      Menerapkan...
                     </div>
                   ) : (
-                    <div className="min-h-[120px] text-sm text-gray-500">Belum meminta saran AI</div>
+                    "Terapkan Semua Saran"
                   )}
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  {!suggestions[q.id] ? (
-                    <button
-                      onClick={() => getSuggestion(q)}
-                      className="px-3 py-2 bg-blue-600 text-white rounded-md"
-                    >
-                      {loadingSuggestion[q.id] ? "Meminta saran..." : "Minta Saran AI"}
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => applySuggestion(q)}
-                        disabled={savingSuggestion[q.id]}
-                        className="px-3 py-2 bg-green-600 text-white rounded-md"
-                      >
-                        {savingSuggestion[q.id] ? "Menyimpan..." : "Simpan Saran AI"}
-                      </button>
-                      <button onClick={() => cancelSuggestion(q.id)} className="px-3 py-2 bg-red-600 text-white rounded-md">
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                </div>
+                </button>
               </div>
             </div>
+            <div
+              className="bg-white rounded p-3"
+              dangerouslySetInnerHTML={{ __html: suggestion }}
+            />
           </div>
-        ))}
+        )}
+
+        <div className="space-y-4">
+          {questions.map((q, index) => (
+            <div key={q.id} className="bg-white shadow-md rounded-lg p-4">
+              <div className="mb-2">
+                <h3 className="text-lg font-medium mb-2">Soal #{index + 1}</h3>
+                <div
+                  className="prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: q.text }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </>
+    </div>
   );
 }

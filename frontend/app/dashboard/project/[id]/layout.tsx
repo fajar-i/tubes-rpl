@@ -1,6 +1,6 @@
 "use client";
 
-import Tabs from "@/components/Tabs";
+import Tabs from "@/components/ui/Tabs";
 import { useParams, usePathname } from "next/navigation";
 
 export default function ProjectLayout({
