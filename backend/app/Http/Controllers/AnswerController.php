@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Question;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class AnswerController extends Controller
 {
@@ -71,7 +72,7 @@ class AnswerController extends Controller
                 'status' => 'success'
             ], 200);
         } catch (\Exception $e) {
-            \Log::error('Gagal mengambil jawaban: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
+            Log::error('Gagal mengambil jawaban: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             return response()->json([
                 'message' => 'Terjadi kesalahan saat mengambil jawaban: ' . $e->getMessage(),
                 'status' => 'error'
@@ -212,7 +213,7 @@ class AnswerController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Kesalahan Upsert Jawaban: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
+            Log::error('Kesalahan Upsert Jawaban: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses jawaban: ' . $e->getMessage(),
                 'status' => 'error'

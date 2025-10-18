@@ -13,7 +13,9 @@ import { QuestionJawaban } from "@/types";
 import { DocumentIcon } from "@heroicons/react/24/outline";
 
 export default function Jawaban() {
+
   const [loading, setLoading] = useState(true);
+
   const router = useRouter();
   const params = useParams<{ id: string; tag: string; item: string }>();
   const [questions, setQuestions] = useState<QuestionJawaban[]>([]);
@@ -50,11 +52,36 @@ export default function Jawaban() {
           headers: { Authorization: `Bearer ${authToken}` }
         });
 
-        if (answersResponse.data.jawaban_data && answersResponse.data.jawaban_data.length > 0) {
-          setKodePesertaList(answersResponse.data.kode_peserta_list);
-          setInitialSpreadsheetData(answersResponse.data.jawaban_data);
+        const jawabanData = answersResponse.data.jawaban_data;
+        const kodePesertaFromApi = answersResponse.data.kode_peserta_list;
+
+        if (jawabanData && jawabanData.length > 0) {
+
+          // --- AWAL PERBAIKAN ---
+          // Cek apakah API memberikan list label yang valid
+          if (kodePesertaFromApi && kodePesertaFromApi.length === jawabanData.length) {
+            // Kasus ideal: Gunakan list dari API
+            setKodePesertaList(kodePesertaFromApi);
+          } else {
+            // Fallback: Jika API tidak memberi label, buat sendiri
+            console.warn("API tidak mengembalikan kode peserta, membuat list default...");
+            const generatedList = Array.from(
+              { length: jawabanData.length },
+              (_, i) => `Peserta_${i + 1}`
+            );
+            setKodePesertaList(generatedList);
+          }
+          // --- AKHIR PERBAIKAN ---
+
+          setInitialSpreadsheetData(jawabanData);
+
         } else {
           const minCols = questionsResponse.data.questions.length > 0 ? questionsResponse.data.questions.length : 10;
+          if (kodePesertaList.length === 0) {
+            const defaultList = Array.from({ length: minRows }, (_, i) => `Peserta_${i + 1}`);
+            setKodePesertaList(defaultList);
+          }
+
           setInitialSpreadsheetData(
             Array.from({ length: minRows }, () => Array(minCols).fill(null))
           );
@@ -168,6 +195,7 @@ export default function Jawaban() {
   } else {
     const minCols = questions.length > 0 ? questions.length : 10;
     const currentDisplayedRows = initialSpreadsheetData.length > 0 ? initialSpreadsheetData.length : kodePesertaList.length;
+    console.log("kode: ", kodePesertaList);
 
     return (
       <>
@@ -177,7 +205,7 @@ export default function Jawaban() {
               <button
                 className="flex justify-center items-center px-4 py-2 bg-green-500 hover:bg-green-600 rounded-md text-sm font-medium text-white cursor-pointer"
               >
-                <DocumentIcon className="h-6 w-6 mr-3"/>
+                <DocumentIcon className="h-6 w-6 mr-3" />
                 Impor dari CSV
               </button>
               <button
@@ -199,13 +227,20 @@ export default function Jawaban() {
                 Save
               </button>
             </div>
-            <Spreadsheet ref={spreadsheetRef}>
+            <Spreadsheet ref={spreadsheetRef}
+              key={kodePesertaList.length} // <-- TAMBAHKAN INI
+            >
               <Worksheet
-                minDimensions={[minCols, currentDisplayedRows]}
+              rowHeaderWidth={150} // <-- TAMBAHKAN INI (ganti 150px dengan lebar yg Anda mau)
+                rows={kodePesertaList.map((namaPeserta) => ({
+                  title: namaPeserta,
+                  width: '100px',
+                  // Anda juga bisa menambahkan properti lain di sini jika perlu
+
+                }))} minDimensions={[minCols, currentDisplayedRows]}
                 data={initialSpreadsheetData}
                 allowInsertColumn={false}
                 columns={questions.map((q, index) => ({ title: `Soal ${index + 1}`, width: 80 }))}
-                rowHeaders={kodePesertaList}
               />
             </Spreadsheet>
           </div>

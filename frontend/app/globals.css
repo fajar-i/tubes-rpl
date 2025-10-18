@@ -27,3 +27,16 @@ body {
     color-scheme: dark;
   }
 }
+/* Target kolom <col> pertama di dalam colgroup */
+.jss_worksheet > colgroup > col:first-child {
+  width: 150px !important; /* Ganti 150px dengan lebar yang Anda mau */
+}
+
+/* Target sel header (Peserta_1, Peserta_2, ...) 
+  untuk memastikan lebarnya konsisten 
+*/
+.jss_worksheet > tbody > tr > .jss_row {
+  width: 150px !important;
+  min-width: 150px !important;
+  box-sizing: border-box; /* Penting agar padding tidak merusak lebar */
+}
