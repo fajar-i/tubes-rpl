@@ -8,7 +8,7 @@ interface QuestionCardProps {
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4">
+    <div className="question-card bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4">
       <div className="flex flex-col mb-3">
         <div className="p-2">
           <p className="text-lg font-semibold">

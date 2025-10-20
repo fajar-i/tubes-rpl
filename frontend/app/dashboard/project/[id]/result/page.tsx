@@ -1,13 +1,15 @@
 "use client";
 
 import Loader from "@/components/ui/Loader";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AnalysisResults, QuestionResult } from "@/types";
 import { AxiosInstance } from "@/lib/axios";
 import { DocumentIcon } from "@heroicons/react/24/outline";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas-pro";
 
 import QuestionCard from "@/components/ui/QuestionCard";
 import ReliabilityCard from "@/components/ui/ReliabilityCard";
@@ -16,12 +18,16 @@ export default function EditorPage() {
   const router = useRouter();
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
   const [questions, setQuestions] = useState<QuestionResult[]>([]);
   const params = useParams<{ id: string; tag: string; item: string }>();
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
+  const [analysisResults, setAnalysisResults] =
+    useState<AnalysisResults | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
+
     const fetchAllQuestions = async () => {
       try {
         const response = await AxiosInstance.get(
@@ -60,7 +66,7 @@ export default function EditorPage() {
       router.push("/auth");
       return;
     }
-    
+
     Promise.all([fetchAllQuestions(), fetchAnalysisResults()]).finally(() => {
       setLoading(false);
     });
@@ -82,16 +88,122 @@ export default function EditorPage() {
     );
   }
 
+  const handleExportPDF = async () => {
+    if (!contentRef.current) return;
+
+    setExportLoading(true);
+    try {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margins = { top: 35, bottom: 10, left: 10, right: 10 };
+      const contentWidth = pdfWidth - margins.left - margins.right;
+
+      // Add title
+      pdf.setFontSize(16);
+      pdf.text(`Hasil Analisis - ${Date.now()}`, pdfWidth / 2, 15, {
+        align: "center",
+      });
+      pdf.setFontSize(12);
+      pdf.text(new Date().toLocaleDateString("id-ID"), pdfWidth / 2, 25, {
+        align: "center",
+      });
+
+      let yOffset = margins.top;
+
+      // Process each question card separately
+      const questionElements =
+        contentRef.current.querySelectorAll(".question-card");
+
+      for (const element of Array.from(questionElements)) {
+        const canvas = await html2canvas(element as HTMLElement, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+        });
+
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+        // Check if we need a new page
+        if (yOffset + imgHeight > pdfHeight - margins.bottom) {
+          pdf.addPage();
+          yOffset = margins.top;
+        }
+
+        // Add the image to PDF
+        pdf.addImage(
+          canvas.toDataURL("image/jpeg", 0.95),
+          "JPEG",
+          margins.left,
+          yOffset,
+          contentWidth,
+          imgHeight
+        );
+
+        yOffset += imgHeight + 5; // 5mm spacing between cards
+      }
+
+      // Add reliability card if it exists
+      const reliabilityElement =
+        contentRef.current.querySelector(".reliability-card");
+      if (reliabilityElement) {
+        const canvas = await html2canvas(reliabilityElement as HTMLElement, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+        });
+
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+        // Check if we need a new page
+        if (yOffset + imgHeight > pdfHeight - margins.bottom) {
+          pdf.addPage();
+          yOffset = margins.top;
+        }
+
+        pdf.addImage(
+          canvas.toDataURL("image/jpeg", 0.95),
+          "JPEG",
+          margins.left,
+          yOffset,
+          contentWidth,
+          imgHeight
+        );
+      }
+
+      pdf.save(`hasil-analisis-${Date.now()}.pdf`);
+      toast.success("PDF berhasil diunduh");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Gagal mengekspor PDF");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="flex-shrink-0">
-        <button className="flex items-center px-4 py-2 rounded-md text-base font-medium text-white bg-red-500 hover:bg-red-600 cursor-pointer">
+        <button
+          onClick={handleExportPDF}
+          disabled={exportLoading}
+          className={`flex items-center px-4 py-2 rounded-md text-base font-medium text-white ${
+            exportLoading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-red-500 hover:bg-red-600 cursor-pointer"
+          }`}
+        >
           <DocumentIcon className="h-6 w-6 mr-3" />
-          Ekspor ke PDF
+          {exportLoading ? "Mengekspor..." : "Ekspor ke PDF"}
         </button>
       </div>
       <div className="flex justify-center">
-        <div className="w-full max-w-3xl">
+        <div
+          ref={contentRef}
+          className="w-full max-w-3xl bg-white p-4 rounded-lg"
+        >
           {questions.map((question) => (
             <QuestionCard
               key={question.id}
