@@ -14,22 +14,21 @@ const ProjectList: React.FC = () => {
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
-
-  const fetchAllProjects = async () => {
-    try {
-      const response = await AxiosInstance.get(`/projects`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`
-        }
-      });
-      setProjects(response.data.projects);
-    } catch (error) {
-      console.log("fetch all projects error : " + error);
-      toast.error("Failed to fetch projects.");
-    }
-  };
-  
+ 
   useEffect(() => {
+    const fetchAllProjects = async () => {
+      try {
+        const response = await AxiosInstance.get(`/projects`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`
+          }
+        });
+        setProjects(response.data.projects);
+      } catch (error) {
+        console.log("fetch all projects error : " + error);
+        toast.error("Failed to fetch projects.");
+      }
+    };
 
     setLoading(true);
     if (!authToken) {
