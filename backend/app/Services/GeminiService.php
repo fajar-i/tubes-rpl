@@ -93,6 +93,16 @@ class GeminiService
         }
 
         $json = $response->json();
-        return $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+        $text = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+        if (!$text) return null;
+
+        // Hapus tanda ```json dan ```
+        $clean = preg_replace('/^```json|```$/m', '', trim($text));
+        $clean = trim(str_replace('```', '', $clean));
+
+        // Kembalikan JSON murni agar bisa didecode di controller
+        return $clean;
+
     }
 }
