@@ -68,12 +68,14 @@ class GeminiService
     1. Tentukan apakah soal ini relevan dengan materi. 
     2. Jelaskan alasannya secara singkat.
     3. Tentukan level Taksonomi Bloom dari soal (C1 = Remembering, C2 = Understanding, C3 = Applying, C4 = Analyzing, C5 = Evaluating, C6 = Creating).
+    4. Jika soal tidak valid, berikan saran soal agar sesuai dan valid (langsung berikan soalnya).
 
     Jawablah hanya dalam format JSON:
     {
     \"is_valid\": true/false,
     \"note\": \"penjelasan singkat\",
     \"bloom_taxonomy\": \"C? - Nama Level\"
+    \"ai_suggestion\": \"Saran perbaikan dari AI jika soal tidak valid, jika valid boleh kosong\"
     }";
 
         $response = Http::withHeaders([

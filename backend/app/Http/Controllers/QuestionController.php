@@ -82,6 +82,7 @@ class QuestionController extends Controller
         $question->is_valid = $decoded['is_valid'] ?? null;
         $question->validation_note = $decoded['note'] ?? null;
         $question->bloom_taxonomy = $decoded['bloom_taxonomy'] ?? null;
+        $question->ai_suggestion = $decoded['ai_suggestion'] ?? null;
         $question->save();
 
         return response()->json([
