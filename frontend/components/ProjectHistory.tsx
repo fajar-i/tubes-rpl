@@ -1,39 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Link from "next/link";
 import { ClockIcon } from "@heroicons/react/24/outline";
-import { Project } from "@/types";
-import { AxiosInstance } from "@/lib/axios";
-import { useMyAppHook } from "@/context/AppProvider";
+import { useProjects } from "@/context/ProjectContext";
 
 const ProjectHistory = () => {
-    const [recentProjects, setRecentProjects] = useState<Project[]>([]);
-    const { authToken } = useMyAppHook();
+    const { projects, fetchProjects } = useProjects();
 
     useEffect(() => {
-        const fetchRecentProjects = async () => {
-            try {
-                const response = await AxiosInstance.get(`/projects`, {
-                    headers: {
-                        Authorization: `Bearer ${authToken}`
-                    }
-                });
-                setRecentProjects(response.data.projects);
-            } catch (error) {
-                console.error("Failed to fetch recent projects:", error);
-            }
-        };
+        fetchProjects();
+    }, [fetchProjects]);
 
-        if (authToken) {
-            fetchRecentProjects();
-        }
-    }, [authToken]);
-
-    if (recentProjects.length === 0) return null;
+    if (projects.length === 0) return null;
 
     return (
         <div className="mt-6">
             <ul className="space-y-2">
-                {recentProjects.map((project) => (
+                {projects.map((project) => (
                     <li key={project.public_id}>
                         <Link
                             href={`/dashboard/project/${project.public_id}/form`}

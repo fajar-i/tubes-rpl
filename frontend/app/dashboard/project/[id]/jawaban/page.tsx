@@ -38,11 +38,6 @@ export default function Jawaban() {
   useEffect(() => {
     setLoading(true);
 
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
-
     const fetchData = async () => {
       try {
         const questionsResponse = await AxiosInstance.get(

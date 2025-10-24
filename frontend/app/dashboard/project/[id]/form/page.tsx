@@ -39,10 +39,7 @@ export default function EditorPage() {
   
   useEffect(() => {
     setLoading(true);
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
+    
     fetchAllQuestions().finally(() => {
       setLoading(false);
     });

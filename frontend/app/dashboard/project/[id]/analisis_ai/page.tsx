@@ -29,11 +29,6 @@ export default function AnalisisAIPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
-
     const fetchQuestions = async () => {
       setLoadingPage(true);
       try {
