@@ -17,6 +17,105 @@ class GeminiService
         $this->apiUrl = config('services.gemini.url');
     }
 
+    /**
+     * Upload file ke Gemini Files API
+     * @return string|null  file_uri seperti 'files/abc123xyz'
+     */
+    public function uploadFile(string $filePath, string $fileName, string $mimeType)
+    {
+        $url = "{$this->apiUrl}/upload/v1beta/files?uploadType=multipart&key={$this->apiKey}";
+
+        $metadata = [
+            'file' => [
+                'display_name' => $fileName,
+            ]
+        ];
+
+        $boundary = 'boundary_' . uniqid();
+
+        $multipartBody =
+            "--{$boundary}\r\n" .
+            "Content-Type: application/json; charset=UTF-8\r\n\r\n" .
+            json_encode($metadata) . "\r\n" .
+            "--{$boundary}\r\n" .
+            "Content-Type: {$mimeType}\r\n\r\n" .
+            file_get_contents($filePath) . "\r\n" .
+            "--{$boundary}--";
+
+        $client = new \GuzzleHttp\Client();
+
+        try {
+            $response = $client->request('POST', $url, [
+                'headers' => [
+                    'Content-Type' => "multipart/related; boundary={$boundary}",
+                    'Accept' => 'application/json',
+                ],
+                'body' => $multipartBody,
+            ]);
+
+            $body = $response->getBody()->getContents();
+            \Log::info('Response upload Gemini:', ['body' => $body]);
+
+            $json = json_decode($body, true);
+
+            // ✅ Perbaikan di sini
+            if (!isset($json['file']['name'])) {
+                \Log::error('Upload ke Gemini gagal, tidak ada file.name di response', ['json' => $json]);
+                return null;
+            }
+
+            // Kembalikan file_uri: "files/xh4v7jkr7c2f"
+            return $json['file']['name'];
+
+        } catch (\Exception $e) {
+            \Log::error('Gagal upload file ke Gemini', [
+                'error' => $e->getMessage(),
+                'response' => method_exists($e, 'getResponse') ? $e->getResponse()?->getBody()?->getContents() : null,
+            ]);
+            return null;
+        }
+    }
+
+
+
+
+    /**
+     * Analisis konten dengan file PDF + prompt
+     */
+    public function analyzeWithFile(string $fileUri, string $mimeType, string $promptText, string $model = 'gemini-1.5-pro-latest')
+    {
+        $url = "{$this->apiUrl}/v1beta/models/{$model}:generateContent?key={$this->apiKey}";
+
+        $body = [
+            'contents' => [
+                [
+                    'parts' => [
+                        [
+                            'file_data' => [
+                                'file_uri' => $fileUri,
+                                'mime_type' => $mimeType,
+                            ]
+                        ],
+                        [
+                            'text' => $promptText
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->post($url, $body);
+
+        if ($response->failed()) {
+            \Log::error('Gagal analisis file di Gemini', ['body' => $response->body()]);
+            return null;
+        }
+
+        return $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? null;
+    }
+
     // Mengizinkan penentuan model, default: gemini-2.5-flash
     protected function buildUrl(string $model = null): string
     {

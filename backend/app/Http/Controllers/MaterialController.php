@@ -5,9 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Material;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use App\Services\GeminiService;
 
 class MaterialController extends Controller
 {
+    protected $gemini;
+
+    public function __construct(GeminiService $gemini)
+    {
+        $this->gemini = $gemini;
+    }
+    
     // Kalau Dibutuhin
     // Ambil semua materi dalam 1 project
     public function index(Project $project)
@@ -22,23 +30,36 @@ class MaterialController extends Controller
     // Simpan materi baru 
     public function store(Request $request, Project $project)
     {
-        // Validasi input file
         $request->validate([
-            'file' => 'required|file|mimes:pdf,txt,doc,docx,ppt,pptx|max:5120', // maksimal 5MB
+            'file' => 'required|file|mimes:pdf,txt,docx|max:5120',
         ]);
 
-        $path = $request->file('file')->store('materials', 'public');
+        $file = $request->file('file');
+        $path = $file->store('materials', 'public'); // disimpan ke storage/app/public/materials
+        $filePath = storage_path("app/public/{$path}");
+        $fileMime = $file->getMimeType();
+        $fileName = $file->getClientOriginalName();
 
-        $url = asset('storage/' . $path);
+        // Upload ke Gemini
+        $fileUri = $this->gemini->uploadFile($filePath, $fileName, $fileMime);
 
+        if (!$fileUri) {
+            return response()->json([
+                "status" => false,
+                "message" => "Gagal mengupload file ke Gemini API"
+            ], 500);
+        }
+
+        // Simpan URL file lokal + URI Gemini di database
         $material = Material::create([
             'project_id' => $project->id,
-            'content' => $url,
+            'content' => asset("storage/{$path}"), // URL publik untuk file
+            'gemini_file_uri' => $fileUri,
         ]);
 
         return response()->json([
             "status" => true,
-            "message" => "Material uploaded successfully",
+            "message" => "File materi berhasil diunggah",
             "material" => $material
         ]);
     }
