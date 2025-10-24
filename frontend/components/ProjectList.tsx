@@ -47,7 +47,7 @@ const ProjectList: React.FC = () => {
 
   return (
     <>
-      {projects.length === 0 ? (
+      {!projects || projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[200px] bg-gray-50 rounded-lg p-8">
           <h3 className="text-xl text-gray-600 mb-4">Belum ada Proyek yang dibuat</h3>
         </div>

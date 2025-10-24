@@ -21,7 +21,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults }
         {question.options.map((opt) => (
           <li key={opt.id} className="flex items-center mb-2">
             <div className="mr-4 text-gray-700 dark:text-gray-300">{opt.option_code}</div>
-            <div className="text-base">
+            <div className="text-base max-w-md text-justify">
               {opt.text}
               {opt.is_right ? (
                 <span className="ml-2 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded-full">

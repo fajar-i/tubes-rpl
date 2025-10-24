@@ -4,13 +4,15 @@ import { ClockIcon } from "@heroicons/react/24/outline";
 import { useProjects } from "@/context/ProjectContext";
 
 const ProjectHistory = () => {
-    const { projects, fetchProjects } = useProjects();
+    const { projects = [], fetchProjects } = useProjects();
 
     useEffect(() => {
-        fetchProjects();
+        if (fetchProjects) {
+            fetchProjects();
+        }
     }, [fetchProjects]);
 
-    if (projects.length === 0) return null;
+    if (!projects || projects.length === 0) return null;
 
     return (
         <div className="mt-6">
