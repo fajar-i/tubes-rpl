@@ -22,20 +22,27 @@ class MaterialController extends Controller
     // Simpan materi baru 
     public function store(Request $request, Project $project)
     {
-        $data = $request->validate([
-            'content' => 'required|string',
+        // Validasi input file
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,txt,doc,docx,ppt,pptx|max:5120', // maksimal 5MB
         ]);
 
-        $data['project_id'] = $project->id;
+        $path = $request->file('file')->store('materials', 'public');
 
-        $material = Material::create($data);
+        $url = asset('storage/' . $path);
+
+        $material = Material::create([
+            'project_id' => $project->id,
+            'content' => $url,
+        ]);
 
         return response()->json([
             "status" => true,
-            "message" => "Material created successfully",
+            "message" => "Material uploaded successfully",
             "material" => $material
         ]);
     }
+
 
     // Update materi
     public function update(Request $request, Material $material)
