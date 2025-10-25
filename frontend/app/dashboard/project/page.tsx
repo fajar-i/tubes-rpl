@@ -1,153 +1,45 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useMyAppHook } from "@/context/AppProvider";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
-import Swal from "sweetalert2";
-import { AxiosInstance } from "@/lib/axios";
-import Loader from "@/components/ui/Loader";
 import { Project } from "@/types";
+import Loader from "@/components/ui/Loader";
+import ProjectEditModal from "@/components/ProjectEditModal";
+import { useProjects, ProjectProvider } from "@/context/ProjectContext";
+import ProjectAddModal from "@/components/ProjectAddModal";
+import { EyeIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 
-const ProjectPage: React.FC = () => {
+const ProjectPageContent: React.FC = () => {
   const router = useRouter();
-  const { authToken } = useMyAppHook();
-  const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project>();
-  
-  const fetchAllProjects = async () => {
-    try {
-      const response = await AxiosInstance.get(`/projects`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`
-        }
-      });
-      setProjects(response.data.projects);
-    } catch (error) {
-      console.log("fetch all projects error : " + error);
-      toast.error("Failed to fetch projects.");
-    }
-  };
+  const { projects, loading, addProject, updateProject, deleteProject, fetchProjects } = useProjects();
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
-    fetchAllProjects().finally(() => {
-      setLoading(false);
-    });
-  }, [authToken, router]);
+    fetchProjects();
+  }, [fetchProjects]);
 
-  const handleAddProject = async () => {
-    const newProject: Project = {
-      "public_id": "temp_id_" + Date.now(), // Temporary ID for optimistic update
-      "nama_ujian": "Ujian baru",
-      "mata_pelajaran": "Mata pelajaran ujian",
-      "kelas": "Kelas saya",
-      "semester": "Semester Ganjil/Genap",
-    };
-
-    try {
-      const response = await AxiosInstance.post(`/projects/`, newProject, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${authToken}`
-        }
-      });
-      if (response.data.status) {
-        setProjects((prev) => [...prev, response.data.project]);
-        toast.success(response.data.message);
-      } else {
-        toast.error("Failed to add project.");
-      }
-    } catch (error) {
-      console.log("Add project error: " + error);
-      toast.error("Failed to add project.");
-    }
-  };
-
-  const handleOpenProject = (p: Project) => {
+  const handleDetailProject = (p: Project) => {
     router.push(`/dashboard/project/${p.public_id}/form`);
   };
 
-  const handleOpenModal = async (p: Project) => {
+  const handleEditProject = async (p: Project) => {
     setSelectedProject(p);
-    setShowModal(true);
+    setShowEditModal(true);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedProject(undefined);
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedProject(null);
   };
 
-  const handleSaveProject = async (p: Project) => {
-    try {
-      const response = await AxiosInstance.post(
-        `/projects/${p.public_id}`, {
-        "nama_ujian": p.nama_ujian,
-        "mata_pelajaran": p.mata_pelajaran,
-        "kelas": p.kelas,
-        "semester": p.semester,
-        _method: "PUT"
-      },
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-      if (response.data.status) {
-        toast.success("Project saved successfully");
-        setProjects((prev) =>
-          prev.map((thisP) => (thisP.public_id === p.public_id ? p : thisP))
-        );
-      } else {
-        toast.error("Failed to save project.");
-      }
-    } catch (e) {
-      toast.error("Failed to save project.");
-      console.error(e);
-      fetchAllProjects(); // Re-fetch to ensure data consistency
-    }
-    handleCloseModal();
+  const handleOpenAddModal = () => {
+    setShowAddModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!"
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const response = await AxiosInstance.delete(`/projects/${id}`, {
-            headers: {
-              Authorization: `Bearer ${authToken}`
-            }
-          });
-          if (response.data.status) {
-            toast.success(response.data.message);
-            fetchAllProjects();
-          } else {
-            toast.error("Failed to delete project.");
-          }
-        } catch (error) {
-          console.log(error);
-          toast.error("Failed to delete project.");
-        } finally {
-          handleCloseModal();
-        }
-      }
-    });
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
   };
 
   if (loading) {
@@ -156,168 +48,115 @@ const ProjectPage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-4">
-       <h1 className="text-3xl font-bold mb-3">Proyek</h1>
-      {selectedProject && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/90 ${showModal ? "block" : "hidden"
-            }`}
+      <div className="flex justify-between text-center my-4">
+        <h1 className="text-3xl font-bold mb-3">Proyek</h1>
+        <button
+          onClick={handleOpenAddModal}
+          className="px-6 py-2 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
         >
-          <div className="relative w-full max-w-md mx-auto rounded-lg shadow-lg bg-white dark:bg-gray-800">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h5 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Edit Proyek
-              </h5>
-              <button
-                type="button"
-                className="text-gray-400 hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-700 dark:hover:text-white"
-                onClick={handleCloseModal}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-            <div className="p-4 flex flex-wrap gap-3 justify-center">
-              <input
-                type="text"
-                className={`w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white ${selectedProject.nama_ujian ? "" : "border-red-500"
-                  }`}
-                value={selectedProject.nama_ujian}
-                placeholder="Nama ujian harus diisi"
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, nama_ujian: e.target.value })
-                }
-                required
-              />
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                value={selectedProject.mata_pelajaran || ""}
-                placeholder="Mata pelajaran"
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, mata_pelajaran: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                value={selectedProject.kelas || ""}
-                placeholder="Kelas"
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, kelas: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                value={selectedProject.semester || ""}
-                placeholder="Semester"
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, semester: e.target.value })
-                }
-              />
-            </div>
-            <div className="flex items-center p-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
-                onClick={handleCloseModal}
-              >
-                Batal
-              </button>
-              <button
-                className="ml-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                onClick={
-                  selectedProject.nama_ujian
-                    ? () => handleSaveProject(selectedProject)
-                    : undefined
-                }
-                disabled={!selectedProject.nama_ujian}
-              >
-                Simpan
-              </button>
-              <button
-                className="ml-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                onClick={() => handleDelete(selectedProject.public_id)}
-              >
-                Delete Project
-              </button>
-            </div>
-          </div>
-        </div>
+          + Tambah Proyek
+        </button>
+      </div>
+      <ProjectAddModal
+        isOpen={showAddModal}
+        onClose={handleCloseAddModal}
+        onAdd={addProject}
+      />
+      {selectedProject && (
+        <ProjectEditModal
+          project={selectedProject}
+          isOpen={showEditModal}
+          onClose={handleCloseEditModal}
+          onSave={updateProject}
+        />
       )}
 
-      <div className="flex justify-center">
-        <div className="w-full">
-          <div className="flex flex-wrap gap-3 justify-center">
-            {projects.map((p) => (
-              <div
-                key={p.public_id}
-                className="flex-1 basis-72 max-w-full rounded-lg shadow-md bg-white dark:bg-gray-800 p-4"
-              >
-                <div className="mb-3">
-                  <p className="text-lg font-semibold mb-0 mx-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((p) => (
+            <div
+              key={p.public_id}
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+            >
+              {/* Card Header with Project Type Badge */}
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
                     {p.nama_ujian}
-                  </p>
-                  {p.mata_pelajaran ? (
-                    <p className="text-lg font-semibold mb-0 mx-2">
-                      {p.mata_pelajaran}
-                    </p>
-                  ) : (
-                    <br className="text-lg font-semibold mb-0 mx-2" />
+                  </h3>
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => deleteProject(p.public_id)}
+                      className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"
+                      >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Body with Project Details */}
+              <div className="px-6 py-4 space-y-3">
+                <div className="space-y-2">
+                  {p.mata_pelajaran && (
+                    <div className="flex items-center text-gray-700 dark:text-gray-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <span>{p.mata_pelajaran}</span>
+                    </div>
                   )}
-                  {p.kelas ? (
-                    <p className="text-lg font-semibold mb-0 mx-2">
-                      {p.kelas}
-                    </p>
-                  ) : (
-                    <br className="text-lg font-semibold mb-0 mx-2" />
+                  {p.kelas && (
+                    <div className="flex items-center text-gray-700 dark:text-gray-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span>{p.kelas}</span>
+                    </div>
                   )}
-                  {p.semester ? (
-                    <p className="text-lg font-semibold mb-0 mx-2">
-                      {p.semester}
-                    </p>
-                  ) : (
-                    <br className="text-lg font-semibold mb-0 mx-2" />
+                  {p.semester && (
+                    <div className="flex items-center text-gray-700 dark:text-gray-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>{p.semester}</span>
+                    </div>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-3 justify-between">
+              </div>
+
+              {/* Card Footer with Actions */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-3 justify-between">
                   <button
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 min-w-[130px]"
-                    onClick={() => handleOpenProject(p)}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
+                    onClick={() => handleDetailProject(p)}
                   >
-                    Buka Project
+                    <EyeIcon className="h-4 w-4"/>
+                    Lihat Detail
                   </button>
                   <button
-                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 min-w-[130px]"
-                    onClick={() => handleOpenModal(p)}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition-colors duration-200 flex items-center justify-center gap-2"
+                    onClick={() => handleEditProject(p)}
                   >
-                    Edit Project
+                   <PencilSquareIcon className="h-4 w-4" />
+                    Edit Proyek
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-4">
-            <button
-              onClick={handleAddProject}
-              className="px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              + Tambah Project
-            </button>
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
+  );
+};
+
+const ProjectPage: React.FC = () => {
+  return (
+    <ProjectProvider>
+      <ProjectPageContent />
+    </ProjectProvider>
   );
 };
 

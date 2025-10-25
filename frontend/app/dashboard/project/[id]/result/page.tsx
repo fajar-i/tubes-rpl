@@ -21,8 +21,7 @@ export default function EditorPage() {
   const [exportLoading, setExportLoading] = useState(false);
   const [questions, setQuestions] = useState<QuestionResult[]>([]);
   const params = useParams<{ id: string; tag: string; item: string }>();
-  const [analysisResults, setAnalysisResults] =
-    useState<AnalysisResults | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,11 +60,6 @@ export default function EditorPage() {
         toast.error("Gagal memuat hasil analisis.");
       }
     };
-
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
 
     Promise.all([fetchAllQuestions(), fetchAnalysisResults()]).finally(() => {
       setLoading(false);

@@ -31,7 +31,7 @@ class MaterialController extends Controller
     public function store(Request $request, Project $project)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,txt,docx|max:5120',
+            'file' => 'required|file|mimes:pdf,txt,docx',
         ]);
 
         $file = $request->file('file');
@@ -50,10 +50,12 @@ class MaterialController extends Controller
             ], 500);
         }
 
+        $public_uri = "https://nonmucilaginous-superattainably-rosena.ngrok-free.dev/";
+
         // Simpan URL file lokal + URI Gemini di database
         $material = Material::create([
             'project_id' => $project->id,
-            'content' => asset("storage/{$path}"), // URL publik untuk file
+            'content' => $public_uri . "storage/{$path}", // URL publik untuk file
             'gemini_file_uri' => $fileUri,
         ]);
 

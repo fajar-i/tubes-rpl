@@ -12,7 +12,11 @@ type QuestionType = {
   id: number;
   text: string;
   options?: { id?: number; text: string; option_code?: string }[];
-  suggestion?: string;
+  ai_suggestion?: string;
+  is_valid?: boolean;
+  validation_note?: string;
+  bloom_taxonomy?: string;
+  showSuggestion?: boolean;
 };
 
 export default function AnalisisAIPage() {
@@ -25,22 +29,19 @@ export default function AnalisisAIPage() {
   const [questions, setQuestions] = useState<QuestionType[]>([]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState<boolean>(false);
-  const [savingSuggestion, setSavingSuggestion] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (!authToken) {
-      router.push("/auth");
-      return;
-    }
-
     const fetchQuestions = async () => {
       setLoadingPage(true);
       try {
         const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
-        setQuestions(resp.data.questions || []);
+        setQuestions((resp.data.questions || []).map((q: QuestionType) => ({
+          ...q,
+          showSuggestion: false
+        })));
       } catch (err) {
         console.error("Gagal ambil questions:", err);
         toast.error("Gagal memuat soal. Mohon coba lagi.");
@@ -59,25 +60,56 @@ export default function AnalisisAIPage() {
     setLoadingSuggestion(true);
 
     try {
-      // Create form data with file and questions
+      // First upload the material
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('project_id', projectId);
-      formData.append('questions', JSON.stringify(questions.map(q => ({ 
-        id: q.id, 
-        text: q.text,
-        options: q.options 
-      }))));
-
-      // Upload file and analyze questions
-      const res = await AxiosInstance.post('/projects/analyze-with-material', formData, {
+      formData.append('file', file);  
+      
+      const materialRes = await AxiosInstance.post(`/projects/${projectId}/materials`, formData, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      setSuggestion(res.data.suggestion);
+      if (!materialRes.data.status) {
+        throw new Error(materialRes.data.message || 'Failed to upload material');
+      }
+
+      // Add a small delay to ensure the material is processed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Then validate each question with the uploaded material
+      const validationPromises = questions.map(async (question) => {
+        try {
+          const response = await AxiosInstance.post(`/question/${question.id}/validate`, null, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          return response;
+        } catch (error) {
+          console.error(`Error validating question ${question.id}:`, error);
+          // Return a structured error response instead of throwing
+          return {
+            data: {
+              status: false,
+              question: {
+                ...question,
+                is_valid: false,
+                validation_note: "Validasi gagal dilakukan",
+                bloom_taxonomy: null,
+                ai_suggestion: null
+              }
+            }
+          };
+        }
+      });
+
+      const validationResults = await Promise.all(validationPromises);
+      setQuestions(validationResults.map(res => ({
+        ...res.data.question,
+        showSuggestion: false // Add this flag to control individual suggestions
+      })));
+      
+      setSuggestion("completed");
       toast.success("Analisis dengan materi berhasil dilakukan");
     } catch (err) {
       console.error("Gagal menganalisis dengan materi:", err);
@@ -87,39 +119,6 @@ export default function AnalisisAIPage() {
     } finally {
       setLoadingSuggestion(false);
     }
-  };
-
-  const applySuggestions = async () => {
-    if (!suggestion || !authToken) return;
-
-    setSavingSuggestion(true);
-    try {
-      // Apply suggestions to all questions
-      await AxiosInstance.post(
-        `/projects/${projectId}/apply-suggestions`,
-        { suggestion },
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
-
-      // Refresh questions list
-      const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      setQuestions(resp.data.questions || []);
-      
-      toast.success("Saran AI berhasil diterapkan ✅");
-      setSuggestion(null);
-    } catch (err) {
-      console.error("Gagal menerapkan saran:", err);
-      toast.error("Gagal menerapkan saran AI");
-    } finally {
-      setSavingSuggestion(false);
-    }
-  };
-
-  const cancelSuggestion = () => {
-    setSuggestion(null);
-    toast("Saran AI dibatalkan");
   };
 
   if (loadingPage) return <Loader />;
@@ -175,50 +174,117 @@ export default function AnalisisAIPage() {
           </div>
         )}
 
-        {suggestion && (
-          <div className="mb-6 p-4 rounded-lg bg-green-50">
-            <div className="flex justify-between items-start mb-3">
-              <h4 className="text-lg font-medium">Hasil Analisis AI</h4>
-              <div className="flex gap-2">
-                <button
-                  onClick={cancelSuggestion}
-                  className="px-3 py-1 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-                  disabled={savingSuggestion}
-                >
-                  Batalkan
-                </button>
-                <button
-                  onClick={applySuggestions}
-                  disabled={savingSuggestion}
-                  className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  {savingSuggestion ? (
-                    <div className="flex items-center gap-2">
-                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                      Menerapkan...
-                    </div>
-                  ) : (
-                    "Terapkan Semua Saran"
-                  )}
-                </button>
-              </div>
-            </div>
-            <div
-              className="bg-white rounded p-3"
-              dangerouslySetInnerHTML={{ __html: suggestion }}
-            />
-          </div>
-        )}
-
-        <div className="space-y-4">
+        <div className="space-y-6">
           {questions.map((q, index) => (
-            <div key={q.id} className="bg-white shadow-md rounded-lg p-4">
-              <div className="mb-2">
-                <h3 className="text-lg font-medium mb-2">Soal #{index + 1}</h3>
-                <div
-                  className="prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: q.text }}
-                />
+            <div key={q.id} className="bg-white shadow-md rounded-lg overflow-hidden">
+              <div className={`grid grid-cols-${!suggestion ? 1 : 2} divide-x divide-gray-200`}>
+                {/* Question Section */}
+                <div className="p-4">
+                  <h3 className="text-lg font-medium mb-2">Soal #{index + 1}</h3>
+                  <div
+                    className="prose"
+                    dangerouslySetInnerHTML={{ __html: q.text }}
+                  />
+                  {q.options && q.options.length > 0 && (
+                    <div className="mt-3 border-t pt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Pilihan Jawaban:</p>
+                      <div className="space-y-1">
+                        {q.options.map((option) => (
+                          <div key={option.id} className="text-sm">
+                            {option.option_code}. {option.text}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Analysis Section */}
+                {suggestion && <div className="p-4 bg-gray-50">
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="text-lg font-medium">Hasil Analisis</h4>
+                    {q.ai_suggestion && !q.showSuggestion && (
+                      <button
+                        onClick={() => {
+                          setQuestions(questions.map(question => 
+                            question.id === q.id ? { ...question, showSuggestion: true } : question
+                          ));
+                        }}
+                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Lihat Saran
+                      </button>
+                    )}
+                    {q.showSuggestion && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setQuestions(questions.map(question => 
+                              question.id === q.id ? { ...question, showSuggestion: false } : question
+                            ));
+                            setSuggestion(null);
+                          }}
+                          className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                        >
+                          Batalkan
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await AxiosInstance.put(
+                                `/questions/${q.id}`,
+                                { text: q.ai_suggestion },
+                                { headers: { Authorization: `Bearer ${authToken}` } }
+                              );
+                              
+                              const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
+                                headers: { Authorization: `Bearer ${authToken}` },
+                              });
+                              setQuestions(resp.data.questions.map((question: QuestionType) => ({
+                                ...question,
+                                showSuggestion: false
+                              })));
+                              setSuggestion(null);
+                              toast.success("Saran berhasil diterapkan");
+                            } catch (err) {
+                              console.error("Gagal menerapkan saran:", err);
+                              toast.error("Gagal menerapkan saran");
+                            }
+                          }}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                        >
+                          Terapkan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className={`text-sm font-medium ${
+                      q.is_valid ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      Status: {q.is_valid ? 'Valid' : 'Invalid'}
+                    </div>
+                    {q.bloom_taxonomy && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Tingkatan Bloom:</span>
+                        <p className="text-sm mt-1">{q.bloom_taxonomy}</p>
+                      </div>
+                    )}
+                    {q.validation_note && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Catatan:</span>
+                        <p className="text-sm mt-1">{q.validation_note}</p>
+                      </div>
+                    )}
+                    {q.ai_suggestion && q.showSuggestion && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Saran Perbaikan:</span>
+                        <p className="text-sm mt-1 text-blue-600">{q.ai_suggestion}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>}
               </div>
             </div>
           ))}

@@ -30,7 +30,7 @@ export default function EditableText({
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onBlur={handleBlur}
-      className={`w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white ${className}`}
+      className={`w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-md dark:bg-gray-700 dark:text-white ${className}`}
     />
   ) : (
     <div onClick={handleClick} className={`cursor-pointer border-b border-gray-300 dark:border-gray-600 py-1 ${className}`}>

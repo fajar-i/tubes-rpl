@@ -18,7 +18,7 @@ const Dashboard: React.FC = () => {
         >
           <PlusIcon width={60} height={60}/>
           <span className="text-xl font-semibold">
-            Buat project evaluasi baru
+            Buat proyek evaluasi baru
           </span>
         </Link>
       </div>
