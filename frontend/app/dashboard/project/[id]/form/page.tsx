@@ -78,7 +78,7 @@ export default function EditorPage() {
       }
     );
     setQuestions((prev) => [...prev, response.data.questions]);
-    toast.success(response.data.message);
+    toast.success("Soal baru ditambahkan");
   };
 
   const handleQuestionBlur = async (qId: number, newText: string) => {
@@ -303,11 +303,12 @@ export default function EditorPage() {
     <>
       <div className="flex justify-center">
         <div className="w-full max-w-3xl">
-          {questions.map((q) => (
+          {questions.map((q, index) => (
             <div
               key={q.id}
               className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4"
             >
+              <h3 className="text-lg text-[#00A1A9] font-bold mb-2">Soal #{index + 1}</h3>
               <div className="flex justify-between items-center mb-3">
                 <div className="flex-grow-1 me-2">
                   <EditableText
@@ -329,14 +330,14 @@ export default function EditorPage() {
                         onBlur={(newText) =>
                           handleOptionBlur(q.id, opt.id, newText)
                         }
-                        className="text-base"
+                        className="text-base max-w-lg text-justify"
                       />
                     </div>
                     <button
                       className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 min-w-[100px]"
                       onClick={() => handleDelete(opt.id, "options")}
                     >
-                      Delete option
+                      Hapus Opsi
                     </button>
                   </li>
                 ))}
@@ -353,19 +354,19 @@ export default function EditorPage() {
                     htmlFor={`${q.id}`}
                     className="text-gray-700 dark:text-gray-300"
                   >
-                    Kunci jawaban :
+                    Kunci jawaban:
                   </label>
                   <select
                     id={`${q.id}`}
                     value={isRight[q.id]}
-                    className="form-select w-1/4 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="form-select w-1/4 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     onChange={(e) =>
                       handleSetIsRight(e.target.id, e.target.value)
                     }
                   >
                     {q.options.map((opt, index) => (
                       <option key={opt.id} value={opt.id}>
-                        {huruf(index)}. {opt.text}
+                        {huruf(index)}.
                       </option>
                     ))}
                   </select>
@@ -373,7 +374,7 @@ export default function EditorPage() {
                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 min-w-[130px]"
                     onClick={() => handleDelete(q.id, "questions")}
                   >
-                    Delete question
+                    Hapus Soal
                   </button>
                 </li>
               </ul>

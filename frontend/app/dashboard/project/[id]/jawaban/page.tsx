@@ -213,7 +213,6 @@ export default function Jawaban() {
     }
 
     const allData = jspreadsheetInstance.getData();
-    console.log("Data mentah dari jspreadsheet (termasuk kosong):", allData);
 
     const questionIds = questions.map((q) => q.id);
 
@@ -271,10 +270,8 @@ export default function Jawaban() {
       delete_all_if_empty: isPayloadCompletelyEmpty,
     };
 
-    console.log("Payload yang akan dikirim:", payload);
-
     try {
-      const response = await AxiosInstance.post(
+      await AxiosInstance.post(
         `/projects/${params.id}/answers`,
         payload,
         {
@@ -284,17 +281,13 @@ export default function Jawaban() {
           },
         }
       );
-      console.log("Respon dari backend:", response.data);
-      toast.success(response.data.message);
+
+      toast.success("Jawaban berhasil simpan");
     } catch (error) {
       console.error("Gagal menyimpan jawaban:", error);
       if (axios.isAxiosError(error) && error.response) {
         console.error("Data error dari backend:", error.response.data);
-        toast.error(
-          `Gagal menyimpan: ${
-            error.response.data.message || "Terjadi kesalahan pada server."
-          }`
-        );
+        toast.error(`Gagal menyimpan: ${error.response.data.message || "Terjadi kesalahan pada server."}`);
       } else {
         toast.error("Terjadi kesalahan jaringan atau server.");
       }
