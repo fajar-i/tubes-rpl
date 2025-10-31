@@ -21,7 +21,7 @@ const Auth: React.FC = () => {
             router.push("/dashboard");
             return;
         }
-    }, [authToken, isLoading]);
+    }, [router, authToken, isLoading]);
 
     const handleOnChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({

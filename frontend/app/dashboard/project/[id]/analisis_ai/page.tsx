@@ -308,13 +308,13 @@ export default function AnalisisAIPage() {
               <div className={`grid grid-cols-${!suggestion ? 1 : 2} divide-x divide-gray-200`}>
                 {/* Question Section */}
                 <div className="p-4">
-                  <h3 className="text-lg font-medium mb-2">Soal #{index + 1}</h3>
+                  <h3 className="text-lg text-[#00A1A9] font-medium mb-2">Soal #{index + 1}</h3>
                   <div
-                    className="prose"
+                    className="prose font-bold"
                     dangerouslySetInnerHTML={{ __html: q.text }}
                   />
                   {q.options && q.options.length > 0 && (
-                    <div className="mt-3 border-t pt-3">
+                    <div className="mt-3 pt-3">
                       <p className="text-sm font-medium text-gray-700 mb-2">Pilihan Jawaban:</p>
                       <div className="space-y-1">
                         {q.options.map((option) => (

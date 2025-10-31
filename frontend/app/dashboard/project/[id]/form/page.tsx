@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import { AxiosInstance } from "@/lib/axios";
 import { OptionForm, QuestionForm } from "@/types";
 import EditableText from "@/components/ui/EditableText";
+import AddQuestionsModal from "@/components/ui/modal/AddQuestionsModal";
 
 export default function EditorPage() {
   const router = useRouter();
@@ -17,6 +18,8 @@ export default function EditorPage() {
   const [questions, setQuestions] = useState<QuestionForm[]>([]);
   const params = useParams<{ id: string; tag: string; item: string }>();
   const [isRight, setIsRight] = useState<{ [key: string]: number }>({});
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   const huruf = (i: number) => {
     return String.fromCharCode("A".charCodeAt(0) + i);
   };
@@ -56,31 +59,46 @@ export default function EditorPage() {
     setIsRight(rightAnswer);
   }, [questions]);
 
-  const handleAddQuestion = async () => {
-    const newQuestion: QuestionForm = {
-      id: Date.now(),
-      text: "Soal baru...",
-      options: [
-        { id: Date.now(), text: "Pilihan A" },
-        { id: Date.now(), text: "Pilihan B" },
-        { id: Date.now(), text: "Pilihan C" },
-      ],
-    };
+  const handleAddMultipleQuestions = async (count: number) => {
+    const newQuestions = [];
+    for (let i = 0; i < count; i++) {
+      const newQuestion: QuestionForm = {
+        id: Date.now() + i,
+        text: `Soal baru #${questions.length + i + 1}...`,
+        options: [
+          { id: Date.now() + i * 3, text: "Pilihan A" },
+          { id: Date.now() + i * 3 + 1, text: "Pilihan B" },
+          { id: Date.now() + i * 3 + 2, text: "Pilihan C" },
+        ],
+      };
+      newQuestions.push(newQuestion);
+    }
 
-    const response = await AxiosInstance.post(
-      `/projects/${params.id}/questions/`,
-      newQuestion,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${authToken}`,
-        },
-      }
-    );
-    setQuestions((prev) => [...prev, response.data.questions]);
-    toast.success("Soal baru ditambahkan");
+    try {
+      const promises = newQuestions.map(question =>
+        AxiosInstance.post(
+          `/projects/${params.id}/questions/`,
+          question,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        )
+      );
+
+      const responses = await Promise.all(promises);
+      const addedQuestions = responses.map(response => response.data.questions);
+      
+      setQuestions(prev => [...prev, ...addedQuestions]);
+      toast.success(`${count} soal baru ditambahkan`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal menambahkan soal");
+    }
   };
-
+  
   const handleQuestionBlur = async (qId: number, newText: string) => {
     if (!newText) {
       newText = "Text harus diisi";
@@ -269,13 +287,14 @@ export default function EditorPage() {
 
   const handleDelete = async (id: number, type: string) => {
     Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
+      title: `Hapus ${type === "questions" ? "Soal": "Opsi"}?`,
+      text: `Anda tidak bisa mengembalikan ${type === "questions" ? "Soal": "Opsi"} jika dihapus!`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
@@ -285,7 +304,7 @@ export default function EditorPage() {
             },
           });
           if (response.data.status) {
-            toast.success(response.data.message);
+            toast.success(`${type === "questions" ? "Soal": "Opsi"} berhasil dihapus!`);
             fetchAllQuestions();
           }
         } catch (error) {
@@ -380,9 +399,9 @@ export default function EditorPage() {
               </ul>
             </div>
           ))}
-          <div className="text-center mt-4">
+          <div className="text-center mt-4 space-x-4">
             <button
-              onClick={handleAddQuestion}
+              onClick={() => setIsAddModalOpen(true)}
               className="px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
               + Tambah Soal
@@ -390,6 +409,12 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+
+      <AddQuestionsModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAdd={handleAddMultipleQuestions}
+      />
     </>
   );
 }

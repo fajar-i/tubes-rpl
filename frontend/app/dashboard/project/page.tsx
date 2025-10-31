@@ -4,12 +4,12 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Project } from "@/types";
 import Loader from "@/components/ui/Loader";
-import ProjectEditModal from "@/components/ProjectEditModal";
-import { useProjects, ProjectProvider } from "@/context/ProjectContext";
-import ProjectAddModal from "@/components/ProjectAddModal";
+import ProjectEditModal from "@/components/ui/modal/ProjectEditModal";
+import { useProjects } from "@/context/ProjectContext";
+import ProjectAddModal from "@/components/ui/modal/ProjectAddModal";
 import { EyeIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 
-const ProjectPageContent: React.FC = () => {
+const ProjectPage: React.FC = () => {
   const router = useRouter();
   const { projects, loading, addProject, updateProject, deleteProject, fetchProjects } = useProjects();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -149,14 +149,6 @@ const ProjectPageContent: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-const ProjectPage: React.FC = () => {
-  return (
-    <ProjectProvider>
-      <ProjectPageContent />
-    </ProjectProvider>
   );
 };
 

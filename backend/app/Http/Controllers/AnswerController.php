@@ -57,12 +57,16 @@ class AnswerController extends Controller
             }
 
             // Ubah array asosiatif menjadi array indeks numerik dan urutkan
-            ksort($formattedAnswers); // Urutkan berdasarkan kode_peserta (string)
+            // Gunakan natural sort (strnatcmp) untuk mengurutkan kode peserta seperti "Peserta_2" sebelum "Peserta_10".
+            // ksort() melakukan pengurutan leksikal biasa yang menyebabkan "Peserta_10" muncul sebelum "Peserta_2".
+            if (!empty($formattedAnswers)) {
+                uksort($formattedAnswers, 'strnatcmp'); // natural order on keys
+            }
+
             $jawabanDataForFrontend = array_values($formattedAnswers); // Ubah menjadi array numerik
 
-            // Ambil daftar kode peserta yang terurut
+            // Ambil daftar kode peserta yang terurut (sesuai urutan natural di atas)
             $kodePesertaListForFrontend = array_keys($formattedAnswers);
-
 
             return response()->json([
                 'questions' => $questions->map(fn($q) => ['id' => $q->id])->toArray(), // Kirim hanya ID pertanyaan

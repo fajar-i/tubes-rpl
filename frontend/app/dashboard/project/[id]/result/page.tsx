@@ -27,43 +27,34 @@ export default function EditorPage() {
   useEffect(() => {
     setLoading(true);
 
-    const fetchAllQuestions = async () => {
+    const fetchData = async () => {
       try {
-        const response = await AxiosInstance.get(
-          `/projects/${params.id}/questions`,
-          {
+        // Get questions and analysis results in parallel using Promise.all
+        const [questionsResponse, analysisResponse] = await Promise.all([
+          AxiosInstance.get(`/projects/${params.id}/questions`, {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
-          }
-        );
-        setQuestions(response.data.questions);
-      } catch (error) {
-        console.error("Fetch all questions error:", error);
-        toast.error("Gagal memuat pertanyaan.");
-      }
-    };
-
-    const fetchAnalysisResults = async () => {
-      try {
-        const response = await AxiosInstance.get(
-          `/projects/${params.id}/result`,
-          {
+          }),
+          AxiosInstance.get(`/projects/${params.id}/result`, {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
-          }
-        );
-        setAnalysisResults(response.data.analisis);
+          })
+        ]);
+
+        // Set both states
+        setQuestions(questionsResponse.data.questions);
+        setAnalysisResults(analysisResponse.data.analisis);
       } catch (error) {
-        console.error("Fetch analysis results error:", error);
-        toast.error("Gagal memuat hasil analisis.");
+        console.error("Error fetching data:", error);
+        toast.error("Gagal memuat data. Silakan coba lagi.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    Promise.all([fetchAllQuestions(), fetchAnalysisResults()]).finally(() => {
-      setLoading(false);
-    });
+    fetchData();
   }, [authToken, params.id, router]);
 
   if (loading) {
@@ -198,11 +189,12 @@ export default function EditorPage() {
           ref={contentRef}
           className="w-full max-w-3xl bg-white p-4 rounded-lg"
         >
-          {questions.map((question) => (
+          {questions.map((question, index) => (
             <QuestionCard
               key={question.id}
               question={question}
               analysisResults={analysisResults}
+              index={index}
             />
           ))}
 
