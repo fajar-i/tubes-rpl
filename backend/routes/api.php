@@ -38,7 +38,5 @@ Route::middleware(['api', 'auth:sanctum'])->group(
 
         Route::get('/projects/{project}/result', [ResultController::class, 'getAnalisis']);
 
-        Route::post('/gemini/generate', [GeminiController::class, 'generate']);
-
     }
 );

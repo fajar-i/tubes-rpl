@@ -68,7 +68,7 @@ class QuestionController extends Controller
             ], 400);
         }
 
-        $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content);
+        $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content, $question->options);
         $decoded = json_decode($result, true);
 
         if (!$decoded) {

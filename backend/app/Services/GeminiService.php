@@ -154,27 +154,48 @@ class GeminiService
         return $json['candidates'][0]['content']['parts'][0]['text'] ?? 'Model response blocked or empty.';
     }
 
-    public function validateQuestionWithBloom(string $question, string $material)
+    public function validateQuestionWithBloom(string $question, string $material, $options = null)
     {
-        $url = $this->buildUrl(); // Gunakan URL yang sudah diperbaiki
+        $url = $this->buildUrl();
 
-        $prompt = "Analisis soal berikut berdasarkan materi ajar dan taksonomi Bloom.
+        // 🔹 Siapkan teks opsi agar mudah dibaca AI
+        $optionsText = '';
+        if ($options && count($options) > 0) {
+            foreach ($options as $opt) {
+                $optionsText .= $opt->option_code . '. ' . $opt->text . "\n";
+            }
+        } else {
+            $optionsText = '(Belum ada opsi)';
+        }
+
+        // 🔹 Prompt baru yang lebih lengkap
+        $prompt = "Analisis soal pilihan ganda berikut berdasarkan materi ajar dan taksonomi Bloom.
 
     Soal: \"$question\"
+    Pilihan jawaban:
+    $optionsText
     Materi: \"$material\"
 
     Tugas kamu:
-    1. Tentukan apakah soal ini relevan dengan materi. 
+    1. Tentukan apakah soal dan pilihan jawaban relevan dengan materi.
     2. Jelaskan alasannya secara singkat.
     3. Tentukan level Taksonomi Bloom dari soal (C1 = Remembering, C2 = Understanding, C3 = Applying, C4 = Analyzing, C5 = Evaluating, C6 = Creating).
-    4. Jika soal tidak valid, berikan saran soal agar sesuai dan valid (langsung berikan soalnya).
+    4. Jika soal atau pilihannya tidak valid, berikan saran versi yang diperbaiki.
+    - \"ai_suggestion_question\" untuk saran teks soalnya.
+    - \"ai_suggestion_options\" untuk saran pilihan jawabannya (dalam bentuk array JSON).
 
-    Jawablah hanya dalam format JSON:
+    Jawablah **hanya dalam format JSON** seperti ini:
     {
     \"is_valid\": true/false,
     \"note\": \"penjelasan singkat\",
-    \"bloom_taxonomy\": \"C? - Nama Level\"
-    \"ai_suggestion\": \"Saran perbaikan dari AI jika soal tidak valid, jika valid boleh kosong\"
+    \"bloom_taxonomy\": \"C? - Nama Level\",
+    \"ai_suggestion_question\": \"Saran perbaikan untuk soal\",
+    \"ai_suggestion_options\": [
+        {\"option_code\": \"A\", \"text\": \"pilihan baru 1\", \"is_right\": false},
+        {\"option_code\": \"B\", \"text\": \"pilihan baru 2\", \"is_right\": true},
+        {\"option_code\": \"C\", \"text\": \"pilihan baru 3\", \"is_right\": false},
+        {\"option_code\": \"D\", \"text\": \"pilihan baru 4\", \"is_right\": false}
+    ]
     }";
 
         $response = Http::withHeaders([
@@ -198,12 +219,11 @@ class GeminiService
 
         if (!$text) return null;
 
-        // Hapus tanda ```json dan ```
+        // Hapus ```json ... ```
         $clean = preg_replace('/^```json|```$/m', '', trim($text));
         $clean = trim(str_replace('```', '', $clean));
 
-        // Kembalikan JSON murni agar bisa didecode di controller
         return $clean;
-
     }
+
 }
