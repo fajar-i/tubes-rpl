@@ -77,9 +77,6 @@ class GeminiService
         }
     }
 
-
-
-
     /**
      * Analisis konten dengan file PDF + prompt
      */
@@ -174,88 +171,33 @@ class GeminiService
         }
 
         // 🔹 Instruksi baru agar AI bertindak sebagai tool evaluasi validitas konten soal
-        $prompt = <<<EOT
-    INSTRUKSI UNTUK MODEL:
-    Kamu adalah tool evaluasi validitas konten soal. 
-    Tugasmu: analisis batch soal dan kembalikan hasilnya *hanya* dalam format JSON sesuai skema yang diuraikan di bawah.
-    Jangan tambahkan teks, penjelasan, atau komentar selain JSON valid.
+        $prompt = "Analisis soal pilihan ganda berikut berdasarkan materi ajar dan taksonomi Bloom.
+        Soal: \"$question\"
+        Pilihan jawaban: $optionsText
+        Materi: \"$material\"
+        Kunci Jawaban: \"$answerKey\"
 
-    PRINSIP UTAMA:
-    - Gunakan *indikator pembelajaran* sebagai acuan utama untuk menentukan kesesuaian.
-    - Gunakan *tujuan pembelajaran* untuk cross-check tujuan umum.
-    - Gunakan *materi* hanya sebagai konteks tambahan (bukan ground truth).
-    - Ada dua mode: "fast" (hanya stem; lebih cepat, tidak menilai PG) dan "full" (menilai stem + opsi PG + kunci jawaban jika tersedia).
+        Tugas kamu:
+        1. Tentukan apakah soal dan pilihan jawaban relevan dengan materi.
+        2. Jelaskan alasannya secara singkat.
+        3. Tentukan level Taksonomi Bloom dari soal (C1 = Remembering, C2 = Understanding, C3 = Applying, C4 = Analyzing, C5 = Evaluating, C6 = Creating).
+        4. Jika soal atau pilihannya tidak valid, berikan saran versi yang diperbaiki.
+        - \"ai_suggestion_question\" untuk saran teks soalnya.
+        - \"ai_suggestion_options\" untuk saran pilihan jawabannya (dalam bentuk array JSON).
 
-    SKEMA JSON OUTPUT (WAJIB):
-    {
-    "meta": {
-        "tujuan": "<string>",
-        "indikator": ["<string>", "..."],
-        "materi": "<string - optional>",
-        "analisis_generated_at": "<ISO8601 timestamp>"
-    },
-    "per_soal": [
+        Jawablah **hanya dalam format JSON** seperti ini:
         {
-        "no": 1,
-        "soal": "<full text of stem>",
-        "pg": {
-            "opsi": ["A. ...", "B. ...", "..."],
-            "kunci": "A" | "B" | "C" | "D" | null
-        },
-        "skor": {
-            "kesesuaian_tujuan": <1-4>,
-            "kesesuaian_indikator": <1-4>,
-            "kedalaman_kognitif": <1-4>,
-            "kejelasan_perumusan": <1-4>,
-            "kesesuaian_bentuk": <1-4>,
-            "kesesuaian_dengan_materi": <1-4>
-        },
-        "rata_rata_skor": <number>,
-        "kesimpulan_validitas": "Valid" | "Sebagian Valid" | "Tidak Valid",
-        "catatan": "<string>"
-        }
-    ],
-    "analisis_keseluruhan": {
-        "cakupan_indikator_terpenuhi_percent": <0-100>,
-        "keseimbangan_kognitif": {
-        "distribusi_per_level": { "C1": <count>, "C2": <count>, "C3": <count>, "C4": <count>, "C5": <count>, "C6": <count> },
-        "keterangan": "<string>"
-        },
-        "kesimpulan_umum": "Valid tinggi" | "Valid sedang" | "Perlu revisi signifikan",
-        "rekomendasi": ["<rekomendasi singkat 1>", "..."]
-    }
-    }
-
-    PETA SKOR: 1 = Sangat Tidak Sesuai, 2 = Kurang Sesuai, 3 = Cukup Sesuai, 4 = Sangat Sesuai.
-
-    INPUT YANG AKU MASUKKAN:
-    {
-    "tujuan": "Evaluasi validitas konten soal berdasarkan indikator pembelajaran",
-    "indikator": ["Kesesuaian tujuan", "Kejelasan perumusan", "Kedalaman kognitif"],
-    "materi": "$material",
-    "daftar_soal": [
-        {
-        "no": 1,
-        "stem": "$question",
-        "pg": {
-            "opsi": "$optionsText",
-            "kunci": "$answerKey"
-        }
-        }
-    ]
-    }
-
-    PERINTAH:
-    Baca input yang diberikan, lakukan analisis per butir sesuai aspek:
-    1) kesesuaian dengan tujuan,
-    2) kesesuaian dengan indikator (utama),
-    3) kedalaman/kognitif,
-    4) kejelasan,
-    5) kesesuaian bentuk,
-    6) kesesuaian dengan materi (tambahan).
-    Kemudian hitung ringkasan keseluruhan sesuai skema di atas.
-    Keluarkan *satu* JSON valid yang mengikuti skema.
-    EOT;
+        \"is_valid\": true/false,
+        \"note\": \"penjelasan singkat\",
+        \"bloom_taxonomy\": \"C? - Nama Level\",
+        \"ai_suggestion_question\": \"Saran perbaikan untuk soal\",
+        \"ai_suggestion_options\": [
+            {\"option_code\": \"A\", \"text\": \"pilihan baru 1\", \"is_right\": false},
+            {\"option_code\": \"B\", \"text\": \"pilihan baru 2\", \"is_right\": true},
+            {\"option_code\": \"C\", \"text\": \"pilihan baru 3\", \"is_right\": false},
+            {\"option_code\": \"D\", \"text\": \"pilihan baru 4\", \"is_right\": false}
+        ]
+        }";
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',

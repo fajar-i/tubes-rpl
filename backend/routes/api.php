@@ -7,7 +7,6 @@ use App\Http\Controllers\OptionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ResultController;
-use App\Http\Controllers\GeminiController;
 use App\Http\Controllers\MaterialController;
 
 Route::post('register',  [AuthController::class, "register"]);
@@ -37,6 +36,5 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::put('/rightOption/{option}', [OptionController::class, 'setIsRight']);
 
         Route::get('/projects/{project}/result', [ResultController::class, 'getAnalisis']);
-
     }
 );
