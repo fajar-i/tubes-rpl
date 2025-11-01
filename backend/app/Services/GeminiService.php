@@ -154,28 +154,107 @@ class GeminiService
         return $json['candidates'][0]['content']['parts'][0]['text'] ?? 'Model response blocked or empty.';
     }
 
-    public function validateQuestionWithBloom(string $question, string $material)
+    public function validateQuestionWithBloom(string $question, string $material, $options = null)
     {
-        $url = $this->buildUrl(); // Gunakan URL yang sudah diperbaiki
+        $url = $this->buildUrl();
 
-        $prompt = "Analisis soal berikut berdasarkan materi ajar dan taksonomi Bloom.
+        // 🔹 Siapkan teks opsi agar mudah dibaca AI
+        $optionsText = '';
+        $answerKey = null;
+        if ($options && count($options) > 0) {
+            foreach ($options as $opt) {
+                $optionsText .= $opt->option_code . '. ' . $opt->text . "\n";
+                if (isset($opt->is_right) && $opt->is_right == 1) {
+                    $answerKey = $opt->option_code;
+                }
+            }
+        } else {
+            $optionsText = '(Belum ada opsi)';
+        }
 
-    Soal: \"$question\"
-    Materi: \"$material\"
+        // 🔹 Instruksi baru agar AI bertindak sebagai tool evaluasi validitas konten soal
+        $prompt = <<<EOT
+    INSTRUKSI UNTUK MODEL:
+    Kamu adalah tool evaluasi validitas konten soal. 
+    Tugasmu: analisis batch soal dan kembalikan hasilnya *hanya* dalam format JSON sesuai skema yang diuraikan di bawah.
+    Jangan tambahkan teks, penjelasan, atau komentar selain JSON valid.
 
-    Tugas kamu:
-    1. Tentukan apakah soal ini relevan dengan materi. 
-    2. Jelaskan alasannya secara singkat.
-    3. Tentukan level Taksonomi Bloom dari soal (C1 = Remembering, C2 = Understanding, C3 = Applying, C4 = Analyzing, C5 = Evaluating, C6 = Creating).
-    4. Jika soal tidak valid, berikan saran soal agar sesuai dan valid (langsung berikan soalnya).
+    PRINSIP UTAMA:
+    - Gunakan *indikator pembelajaran* sebagai acuan utama untuk menentukan kesesuaian.
+    - Gunakan *tujuan pembelajaran* untuk cross-check tujuan umum.
+    - Gunakan *materi* hanya sebagai konteks tambahan (bukan ground truth).
+    - Ada dua mode: "fast" (hanya stem; lebih cepat, tidak menilai PG) dan "full" (menilai stem + opsi PG + kunci jawaban jika tersedia).
 
-    Jawablah hanya dalam format JSON:
+    SKEMA JSON OUTPUT (WAJIB):
     {
-    \"is_valid\": true/false,
-    \"note\": \"penjelasan singkat\",
-    \"bloom_taxonomy\": \"C? - Nama Level\"
-    \"ai_suggestion\": \"Saran perbaikan dari AI jika soal tidak valid, jika valid boleh kosong\"
-    }";
+    "meta": {
+        "tujuan": "<string>",
+        "indikator": ["<string>", "..."],
+        "materi": "<string - optional>",
+        "analisis_generated_at": "<ISO8601 timestamp>"
+    },
+    "per_soal": [
+        {
+        "no": 1,
+        "soal": "<full text of stem>",
+        "pg": {
+            "opsi": ["A. ...", "B. ...", "..."],
+            "kunci": "A" | "B" | "C" | "D" | null
+        },
+        "skor": {
+            "kesesuaian_tujuan": <1-4>,
+            "kesesuaian_indikator": <1-4>,
+            "kedalaman_kognitif": <1-4>,
+            "kejelasan_perumusan": <1-4>,
+            "kesesuaian_bentuk": <1-4>,
+            "kesesuaian_dengan_materi": <1-4>
+        },
+        "rata_rata_skor": <number>,
+        "kesimpulan_validitas": "Valid" | "Sebagian Valid" | "Tidak Valid",
+        "catatan": "<string>"
+        }
+    ],
+    "analisis_keseluruhan": {
+        "cakupan_indikator_terpenuhi_percent": <0-100>,
+        "keseimbangan_kognitif": {
+        "distribusi_per_level": { "C1": <count>, "C2": <count>, "C3": <count>, "C4": <count>, "C5": <count>, "C6": <count> },
+        "keterangan": "<string>"
+        },
+        "kesimpulan_umum": "Valid tinggi" | "Valid sedang" | "Perlu revisi signifikan",
+        "rekomendasi": ["<rekomendasi singkat 1>", "..."]
+    }
+    }
+
+    PETA SKOR: 1 = Sangat Tidak Sesuai, 2 = Kurang Sesuai, 3 = Cukup Sesuai, 4 = Sangat Sesuai.
+
+    INPUT YANG AKU MASUKKAN:
+    {
+    "tujuan": "Evaluasi validitas konten soal berdasarkan indikator pembelajaran",
+    "indikator": ["Kesesuaian tujuan", "Kejelasan perumusan", "Kedalaman kognitif"],
+    "materi": "$material",
+    "daftar_soal": [
+        {
+        "no": 1,
+        "stem": "$question",
+        "pg": {
+            "opsi": "$optionsText",
+            "kunci": "$answerKey"
+        }
+        }
+    ]
+    }
+
+    PERINTAH:
+    Baca input yang diberikan, lakukan analisis per butir sesuai aspek:
+    1) kesesuaian dengan tujuan,
+    2) kesesuaian dengan indikator (utama),
+    3) kedalaman/kognitif,
+    4) kejelasan,
+    5) kesesuaian bentuk,
+    6) kesesuaian dengan materi (tambahan).
+    Kemudian hitung ringkasan keseluruhan sesuai skema di atas.
+    Keluarkan *satu* JSON valid yang mengikuti skema.
+    EOT;
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
@@ -198,12 +277,11 @@ class GeminiService
 
         if (!$text) return null;
 
-        // Hapus tanda ```json dan ```
+        // Bersihkan dari ```json ... ```
         $clean = preg_replace('/^```json|```$/m', '', trim($text));
         $clean = trim(str_replace('```', '', $clean));
 
-        // Kembalikan JSON murni agar bisa didecode di controller
         return $clean;
-
     }
+
 }
