@@ -111,7 +111,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 htmlFor="semester"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Semester
+                Semester (Genap/Ganjil)
               </label>
               <input
                 type="text"

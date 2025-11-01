@@ -56,9 +56,9 @@ export const AppProvider = ({
                 setAuthToken(response.data.token);
                 await fetchUser(response.data.token); // Fetch user data after successful login
                 router.push("/dashboard");
-                toast.success("Login successful");
+                toast.success("Login berhasil");
             } else {
-                toast.error("Invalid login details");
+                toast.error("Username atau password salah!");
             }
         } catch (error) {
             console.log(`Auth error: ${error}`)
@@ -69,8 +69,8 @@ export const AppProvider = ({
     const register = async (name: string, email: string, password: string, password_confirmation: string) => {
         setIsLoading(true)
         try {
-            const response = await AxiosInstance.post(`/register`, { name, email, password, password_confirmation })
-            toast.success(response.data.message);
+            await AxiosInstance.post(`/register`, { name, email, password, password_confirmation })
+            toast.success("Registrasi berhasil!");
         } catch (error) {
             toast.error("registration failed, username already exist");
             console.log(`Auth error: ${error}`)

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class GeminiService
 {
@@ -54,13 +55,13 @@ class GeminiService
             ]);
 
             $body = $response->getBody()->getContents();
-            \Log::info('Response upload Gemini:', ['body' => $body]);
+            Log::info('Response upload Gemini:', ['body' => $body]);
 
             $json = json_decode($body, true);
 
             // ✅ Perbaikan di sini
             if (!isset($json['file']['name'])) {
-                \Log::error('Upload ke Gemini gagal, tidak ada file.name di response', ['json' => $json]);
+                Log::error('Upload ke Gemini gagal, tidak ada file.name di response', ['json' => $json]);
                 return null;
             }
 
@@ -68,7 +69,7 @@ class GeminiService
             return $json['file']['name'];
 
         } catch (\Exception $e) {
-            \Log::error('Gagal upload file ke Gemini', [
+            Log::error('Gagal upload file ke Gemini', [
                 'error' => $e->getMessage(),
                 'response' => method_exists($e, 'getResponse') ? $e->getResponse()?->getBody()?->getContents() : null,
             ]);
@@ -109,7 +110,7 @@ class GeminiService
         ])->post($url, $body);
 
         if ($response->failed()) {
-            \Log::error('Gagal analisis file di Gemini', ['body' => $response->body()]);
+            Log::error('Gagal analisis file di Gemini', ['body' => $response->body()]);
             return null;
         }
 

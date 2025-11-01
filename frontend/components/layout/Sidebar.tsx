@@ -5,10 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, DocumentTextIcon, ArrowLeftStartOnRectangleIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { useMyAppHook } from "@/context/AppProvider";
-import { ProjectProvider } from "@/context/ProjectContext";
 import ProjectHistory from '../ProjectHistory';
 
-const SidebarContent = () => {
+const Sidebar = () => {
   const pathname = usePathname();
   const { logout } = useMyAppHook(); // Use logout from context
   const [isOpen, setIsOpen] = useState(false);
@@ -99,14 +98,6 @@ const SidebarContent = () => {
         </div>
       </aside>
     </>
-  );
-};
-
-const Sidebar = () => {
-  return (
-    <ProjectProvider>
-      <SidebarContent />
-    </ProjectProvider>
   );
 };
 

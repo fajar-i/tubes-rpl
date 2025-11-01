@@ -18,7 +18,7 @@ const Tabs: React.FC<TabProps> = ({ params, children, title }) => {
   const link: LinkItem[] = [
     {
       href: `/dashboard/project/${params}/form`,
-      title: "Form",
+      title: "Soal",
     },
     {
       href: `/dashboard/project/${params}/jawaban`,

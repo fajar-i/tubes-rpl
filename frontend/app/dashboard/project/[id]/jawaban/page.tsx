@@ -28,14 +28,6 @@ export default function Jawaban() {
   const minRows = 10;
 
   useEffect(() => {
-    const generatedList: string[] = [];
-    for (let i = 0; i < minRows; i++) {
-      generatedList.push(`Peserta_${i + 1}`);
-    }
-    setKodePesertaList(generatedList);
-  }, [minRows]);
-
-  useEffect(() => {
     setLoading(true);
 
     const fetchData = async () => {
@@ -99,7 +91,7 @@ export default function Jawaban() {
     };
 
     fetchData();
-  }, [authToken, params.id, router, kodePesertaList.length]);
+  }, [authToken, params.id, router]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const spreadsheetRef = useRef<any>(null);
@@ -213,7 +205,6 @@ export default function Jawaban() {
     }
 
     const allData = jspreadsheetInstance.getData();
-    console.log("Data mentah dari jspreadsheet (termasuk kosong):", allData);
 
     const questionIds = questions.map((q) => q.id);
 
@@ -271,10 +262,8 @@ export default function Jawaban() {
       delete_all_if_empty: isPayloadCompletelyEmpty,
     };
 
-    console.log("Payload yang akan dikirim:", payload);
-
     try {
-      const response = await AxiosInstance.post(
+      await AxiosInstance.post(
         `/projects/${params.id}/answers`,
         payload,
         {
@@ -284,17 +273,13 @@ export default function Jawaban() {
           },
         }
       );
-      console.log("Respon dari backend:", response.data);
-      toast.success(response.data.message);
+
+      toast.success("Jawaban berhasil simpan");
     } catch (error) {
       console.error("Gagal menyimpan jawaban:", error);
       if (axios.isAxiosError(error) && error.response) {
         console.error("Data error dari backend:", error.response.data);
-        toast.error(
-          `Gagal menyimpan: ${
-            error.response.data.message || "Terjadi kesalahan pada server."
-          }`
-        );
+        toast.error(`Gagal menyimpan: ${error.response.data.message || "Terjadi kesalahan pada server."}`);
       } else {
         toast.error("Terjadi kesalahan jaringan atau server.");
       }
@@ -323,13 +308,64 @@ export default function Jawaban() {
       ? initialSpreadsheetData.length
       : kodePesertaList.length;
 
+  // Define type for jspreadsheet worksheet instance
+  interface JSpreadsheetInstance {
+    insertRow: (rowNumber: number) => void;
+    deleteRow: (rowNumber: number) => void;
+    getData: () => (string | null)[][];
+  }
+
+  // Event handlers for row operations
+  const handleInsertRow = (_: JSpreadsheetInstance, rowNumber: number) => {
+    // Get current data
+    const currentData = spreadsheetRef.current?.[0]?.getData() || [];
+    const emptyRow = Array(questions.length).fill(null);
+    
+    // Insert new row into data
+    const newData = [
+      ...currentData.slice(0, rowNumber),
+      emptyRow,
+      ...currentData.slice(rowNumber)
+    ];
+
+    // Create new kode peserta list
+    const newKodeList = Array.from(
+      { length: newData.length },
+      (_, i) => `Peserta_${i + 1}`
+    );
+
+    // Update states
+    setInitialSpreadsheetData(newData);
+    setKodePesertaList(newKodeList);
+  };
+
+  const handleDeleteRow = (_: JSpreadsheetInstance, rowNumber: number) => {
+    // Get current data
+    const currentData = spreadsheetRef.current?.[0]?.getData() || [];
+    
+    // Remove row from data
+    const newData = [
+      ...currentData.slice(0, rowNumber),
+      ...currentData.slice(rowNumber + 1)
+    ];
+
+    // Create new kode peserta list
+    const newKodeList = Array.from(
+      { length: newData.length },
+      (_, i) => `Peserta_${i + 1}`
+    );
+
+    // Update states
+    setInitialSpreadsheetData(newData);
+    setKodePesertaList(newKodeList);
+  };
+
   return (
     <>
-      <div className="flex flex-col items-center justify-center overflow-x-auto">
-        {/* Added overflow-x-auto */}
-        <div className="min-w-full">
-          {/* Added min-w-full to ensure it takes full width */}
-          <div className="flex space-x-2 mb-4">
+      <div className="flex flex-col max-w-5xl h-full">
+        {/* Fixed header with buttons */}
+        <div className="flex-none px-4 py-2">
+          <div className="flex flex-wrap gap-2">
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -357,35 +393,46 @@ export default function Jawaban() {
               Redo
             </button>
           </div>
-          <Spreadsheet 
-            ref={spreadsheetRef} 
-            key={kodePesertaList.length}
-          >
-            <Worksheet
-              rowHeaderWidth={150}
-              rows={kodePesertaList.map((namaPeserta) => ({
-                title: namaPeserta,
-                width: "100px",
-              }))}
-              minDimensions={[minCols, currentDisplayedRows]}
-              data={initialSpreadsheetData}
-              allowInsertColumn={false}
-              allowInsertRow={true}
-              columns={questions.map((q, index) => ({
-                title: `Soal ${index + 1}`,
-                width: 80,
-              }))}
-            />
-          </Spreadsheet>
         </div>
-        <div className="mt-3">
-          <button
-            onClick={handleSave}
-            disabled={loading || questions.length === 0}
-            className="px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          >
-            {loading ? "Memuat..." : "Simpan"}
-          </button>
+
+        {/* Scrollable spreadsheet container */}
+        <div className="flex-1 px-4 overflow-x-auto">
+          <div className="h-full" style={{ minWidth: Math.max(800, (questions.length * 80) + 150) + 'px' }}>
+            <Spreadsheet 
+              ref={spreadsheetRef}
+            >
+              <Worksheet
+                rowHeaderWidth={150}
+                rows={kodePesertaList.map((namaPeserta) => ({
+                  title: namaPeserta,
+                  width: "100px",
+                }))}
+                minDimensions={[minCols, currentDisplayedRows]}
+                data={initialSpreadsheetData}
+                allowInsertColumn={false}
+                allowInsertRow={true}
+                columns={questions.map((q, index) => ({
+                  title: `Soal ${index + 1}`,
+                  width: 80,
+                }))}
+                oninsertrow={handleInsertRow}
+                ondeleterow={handleDeleteRow}
+              />
+            </Spreadsheet>
+          </div>
+        </div>
+
+        {/* Fixed footer with save button */}
+        <div className="flex-none px-4 py-3 bg-white">
+          <div className="flex justify-center">
+            <button
+              onClick={handleSave}
+              disabled={loading || questions.length === 0}
+              className="w-full max-w-md px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Memuat..." : "Simpan"}
+            </button>
+          </div>
         </div>
       </div>
     </>
