@@ -50,12 +50,10 @@ class MaterialController extends Controller
             ], 500);
         }
 
-        $public_uri = "https://nonmucilaginous-superattainably-rosena.ngrok-free.dev/";
-
         // Simpan URL file lokal + URI Gemini di database
         $material = Material::create([
             'project_id' => $project->id,
-            'content' => $public_uri . "storage/{$path}", // URL publik untuk file
+            'content' => asset("storage/{$path}"), // URL publik untuk file
             'gemini_file_uri' => $fileUri,
         ]);
 
