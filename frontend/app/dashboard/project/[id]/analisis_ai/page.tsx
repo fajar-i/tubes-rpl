@@ -7,25 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
 import { DocumentIcon } from "@heroicons/react/24/outline";
-
-type MaterialType = {
-  id: number;
-  project_id: number;
-  content: string;
-  gemini_file_uri: string;
-  created_at: string;
-};
-
-type QuestionType = {
-  id: number;
-  text: string;
-  options?: { id?: number; text: string; option_code?: string }[];
-  ai_suggestion?: string;
-  is_valid?: boolean;
-  validation_note?: string;
-  bloom_taxonomy?: string;
-  showSuggestion?: boolean;
-};
+import { AIResultType, MaterialType } from "@/types";
 
 export default function AnalisisAIPage() {
   const { authToken } = useMyAppHook();
@@ -34,12 +16,58 @@ export default function AnalisisAIPage() {
   const router = useRouter();
 
   const [loadingPage, setLoadingPage] = useState<boolean>(true);
-  const [questions, setQuestions] = useState<QuestionType[]>([]);
+  const [questions, setQuestions] = useState<AIResultType[]>([]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [materials, setMaterials] = useState<MaterialType[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState<boolean>(true);
+
+  const applySuggestions = async (question: AIResultType) => {
+    try {
+      // Update question text
+      if (question.ai_suggestion_question) {
+        await AxiosInstance.put(
+          `/questions/${question.id}`,
+          { text: question.ai_suggestion_question },
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+      }
+
+      // Update options if they exist
+      if (question.ai_suggestion_options && question.ai_suggestion_options.length > 0) {
+        const updateOptionPromises = question.ai_suggestion_options.map((option, index) => {
+          if (question.options && question.options[index]) {
+            return AxiosInstance.put(
+              `/options/${question.options[index].id}`,
+              {
+                text: option.text
+              },
+              { headers: { Authorization: `Bearer ${authToken}` } }
+            );
+          }
+          return null;
+        });
+
+        await Promise.all(updateOptionPromises.filter(p => p !== null));
+      }
+
+      // Refresh questions
+      const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      setQuestions(resp.data.questions.map((q: AIResultType) => ({
+        ...q,
+        showSuggestion: false
+      })));
+      setSuggestion(null);
+      toast.success("Saran berhasil diterapkan");
+    } catch (err) {
+      console.error("Gagal menerapkan saran:", err);
+      toast.error("Gagal menerapkan saran");
+    } 
+  };
 
   const fetchMaterials = async () => {
     setLoadingMaterials(true);
@@ -77,7 +105,7 @@ export default function AnalisisAIPage() {
         const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
-        setQuestions((resp.data.questions || []).map((q: QuestionType) => ({
+        setQuestions((resp.data.questions || []).map((q: AIResultType) => ({
           ...q,
           showSuggestion: false
         })));
@@ -116,7 +144,7 @@ export default function AnalisisAIPage() {
       }
 
       // Add a small delay to ensure the material is processed
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Then validate each question with the uploaded material
       const validationPromises = questions.map(async (question) => {
@@ -124,19 +152,38 @@ export default function AnalisisAIPage() {
           const response = await AxiosInstance.post(`/question/${question.id}/validate`, null, {
             headers: { 'Authorization': `Bearer ${authToken}` }
           });
-          return response;
+          
+          // The validation results are in response.data.data
+          const validationData = response.data.data; // Access the data property
+         
+          return {
+            data: {
+              status: true,
+              question: {
+                ...question,
+                id: question.id, // Ensure ID is preserved
+                is_valid: validationData.is_valid,
+                validation_note: validationData.note,
+                bloom_taxonomy: validationData.bloom_taxonomy,
+                ai_suggestion_question: validationData.ai_suggestion_question,
+                ai_suggestion_options: validationData.ai_suggestion_options,
+                showSuggestion: false
+              }
+            }
+          };
         } catch (error) {
           console.error(`Error validating question ${question.id}:`, error);
-          // Return a structured error response instead of throwing
           return {
             data: {
               status: false,
               question: {
                 ...question,
+                id: question.id, // Ensure ID is preserved
                 is_valid: false,
                 validation_note: "Validasi gagal dilakukan",
                 bloom_taxonomy: null,
-                ai_suggestion: null
+                ai_suggestion_question: null,
+                showSuggestion: false
               }
             }
           };
@@ -144,11 +191,18 @@ export default function AnalisisAIPage() {
       });
 
       const validationResults = await Promise.all(validationPromises);
-      setQuestions(validationResults.map(res => ({
-        ...res.data.question,
-        showSuggestion: false // Add this flag to control individual suggestions
-      })));
       
+      // Ensure each question has a unique ID and proper structure
+      const updatedQuestions = validationResults.map(res => {
+        const question = res.data.question;
+        return {
+          ...question,
+          id: question.id, // Ensure ID is preserved
+          showSuggestion: false
+        };
+      });
+      
+      setQuestions(updatedQuestions);
       setSuggestion("completed");
       toast.success("Analisis dengan materi berhasil dilakukan");
     } catch (err) {
@@ -230,7 +284,23 @@ export default function AnalisisAIPage() {
                                 const response = await AxiosInstance.post(`/question/${question.id}/validate`, null, {
                                   headers: { 'Authorization': `Bearer ${authToken}` }
                                 });
-                                return response;
+                                const validatedData = response.data.data; // Access the data property
+                                
+                                return {
+                                  data: {
+                                    status: true,
+                                    question: {
+                                      ...question,
+                                      id: question.id,
+                                      is_valid: validatedData.is_valid,
+                                      validation_note: validatedData.note,
+                                      bloom_taxonomy: validatedData.bloom_taxonomy,
+                                      ai_suggestion_question: validatedData.ai_suggestion_question,
+                                      ai_suggestion_options: validatedData.ai_suggestion_options,
+                                      showSuggestion: false
+                                    }
+                                  }
+                                };
                               } catch (error) {
                                 console.log("Gagal melakukan validasi", error);
                                 return {
@@ -238,10 +308,12 @@ export default function AnalisisAIPage() {
                                     status: false,
                                     question: {
                                       ...question,
+                                      id: question.id,
                                       is_valid: false,
                                       validation_note: "Validasi gagal dilakukan",
                                       bloom_taxonomy: null,
-                                      ai_suggestion: null
+                                      ai_suggestion_question: null,
+                                      showSuggestion: false
                                     }
                                   }
                                 };
@@ -249,11 +321,17 @@ export default function AnalisisAIPage() {
                             });
                   
                             const validationResults = await Promise.all(validationPromises);
-                            setQuestions(validationResults.map(res => ({
-                              ...res.data.question,
-                              showSuggestion: false
-                            })));
                             
+                            // Ensure each question has a unique ID and proper structure
+                            const updatedQuestions = validationResults.map(res => {
+                              const question = res.data.question;
+                              return {
+                                ...question,
+                                id: question.id, // Ensure ID is preserved
+                                showSuggestion: false
+                              };
+                            });
+                            setQuestions(updatedQuestions);
                             setSuggestion("completed");
                             toast.success("Analisis dengan materi berhasil dilakukan");
                           } catch (err) {
@@ -331,7 +409,7 @@ export default function AnalisisAIPage() {
                 {suggestion && <div className="p-4 bg-gray-50">
                   <div className="flex justify-between items-start mb-4">
                     <h4 className="text-lg font-medium">Hasil Analisis</h4>
-                    {q.ai_suggestion && !q.showSuggestion && (
+                    {q.ai_suggestion_question && !q.showSuggestion && !q.is_valid && (
                       <button
                         onClick={() => {
                           setQuestions(questions.map(question => 
@@ -357,31 +435,9 @@ export default function AnalisisAIPage() {
                           Batalkan
                         </button>
                         <button
-                          onClick={async () => {
-                            try {
-                              await AxiosInstance.put(
-                                `/questions/${q.id}`,
-                                { text: q.ai_suggestion },
-                                { headers: { Authorization: `Bearer ${authToken}` } }
-                              );
-                              
-                              const resp = await AxiosInstance.get(`/projects/${projectId}/questions`, {
-                                headers: { Authorization: `Bearer ${authToken}` },
-                              });
-                              setQuestions(resp.data.questions.map((question: QuestionType) => ({
-                                ...question,
-                                showSuggestion: false
-                              })));
-                              setSuggestion(null);
-                              toast.success("Saran berhasil diterapkan");
-                            } catch (err) {
-                              console.error("Gagal menerapkan saran:", err);
-                              toast.error("Gagal menerapkan saran");
-                            }
-                          }}
-                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                        >
-                          Terapkan
+                          onClick={() => applySuggestions(q)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                          Terapkan Saran
                         </button>
                       </div>
                     )}
@@ -402,14 +458,29 @@ export default function AnalisisAIPage() {
                     {q.validation_note && (
                       <div>
                         <span className="text-sm font-medium text-gray-700">Catatan:</span>
-                        <p className="text-sm mt-1">{q.validation_note}</p>
+                        <p className="text-sm mt-1 whitespace-pre-wrap">{q.validation_note}</p>
                       </div>
                     )}
-                    {q.ai_suggestion && q.showSuggestion && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Saran Perbaikan:</span>
-                        <p className="text-sm mt-1 text-blue-600">{q.ai_suggestion}</p>
-                      </div>
+                    {q.ai_suggestion_question && q.showSuggestion && (
+                      <>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Saran Perbaikan Soal:</span>
+                          <p className="text-sm mt-1 text-blue-600 whitespace-pre-wrap">{q.ai_suggestion_question}</p>
+                        </div>
+                        {q.ai_suggestion_options && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Saran Perbaikan Opsi:</span>
+                            <div className="mt-1 space-y-1">
+                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                              {q.ai_suggestion_options.map((opt: any, idx: number) => (
+                                <p key={idx} className="text-sm text-blue-600">
+                                  {opt.option_code}. {opt.text} {opt.is_right && '(Kunci)'}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>}

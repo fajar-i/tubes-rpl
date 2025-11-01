@@ -1,25 +1,25 @@
 export interface UserType {
-    id: number;
-    name: string;
-    email: string;
-    role: string; // Assuming a 'role' field for the user
+  id: number;
+  name: string;
+  email: string;
+  role: string; // Assuming a 'role' field for the user
 }
 
 export interface AppProviderType {
-    login: (email: string, password: string) => Promise<void>,
-    register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
-    isLoading: boolean,
-    authToken: string | null,
-    setIsLoading: (loading: boolean) => void,
-    logout: () => void,
-    user: UserType | null; // Added user to AppProviderType
+  login: (email: string, password: string) => Promise<void>,
+  register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
+  isLoading: boolean,
+  authToken: string | null,
+  setIsLoading: (loading: boolean) => void,
+  logout: () => void,
+  user: UserType | null; // Added user to AppProviderType
 }
 
 export interface RegisterData {
-    name?: string;
-    email: string;
-    password: string;
-    password_confirmation?: string;
+  name?: string;
+  email: string;
+  password: string;
+  password_confirmation?: string;
 }
 
 export type OptionForm = {
@@ -88,4 +88,30 @@ export type AnalysisResults = {
   k_items?: number;
   sum_of_item_variances?: number;
   total_score_variance?: number;
+};
+
+export type MaterialType = {
+  id: number;
+  project_id: number;
+  content: string;
+  gemini_file_uri: string;
+  created_at: string;
+};
+
+export type AIOptionSuggestion = {
+  option_code: string;
+  text: string;
+  is_right: boolean;
+};
+
+export type AIResultType = {
+  id: number;
+  text: string;
+  options?: { id?: number; text: string; option_code?: string }[];
+  ai_suggestion_question?: string | null;
+  ai_suggestion_options?: AIOptionSuggestion[] | null;
+  is_valid?: boolean;
+  validation_note?: string | null;
+  bloom_taxonomy?: string | null;
+  showSuggestion?: boolean;
 };
