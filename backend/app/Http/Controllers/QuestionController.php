@@ -58,39 +58,35 @@ class QuestionController extends Controller
     }
 
     public function validateQuestion(Request $request, Question $question)
-    {
-        $materi = Material::where('project_id', $question->project_id)->first();
+{
+    $materi = Material::where('project_id', $question->project_id)->first();
 
-        if (!$materi) {
-            return response()->json([
-                "status" => false,
-                "message" => "Materi belum tersedia untuk project ini"
-            ], 400);
-        }
-
-        $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content, $question->options);
-        $decoded = json_decode($result, true);
-
-        if (!$decoded) {
-            return response()->json([
-                "status" => false,
-                "message" => "Format jawaban AI tidak valid",
-                "raw" => $result
-            ], 500);
-        }
-
-        $question->is_valid = $decoded['is_valid'] ?? null;
-        $question->validation_note = $decoded['note'] ?? null;
-        $question->bloom_taxonomy = $decoded['bloom_taxonomy'] ?? null;
-        $question->ai_suggestion = $decoded['ai_suggestion'] ?? null;
-        $question->save();
-
+    if (!$materi) {
         return response()->json([
-            "status" => true,
-            "message" => "Soal berhasil divalidasi",
-            "question" => $question
-        ]);
+            "status" => false,
+            "message" => "Materi belum tersedia untuk project ini"
+        ], 400);
     }
+
+    $result = $this->gemini->validateQuestionWithBloom($question->text, $materi->content, $question->options);
+    $decoded = json_decode($result, true);
+
+    if (!$decoded) {
+        return response()->json([
+            "status" => false,
+            "message" => "Format jawaban AI tidak valid",
+            "raw" => $result
+        ], 500);
+    }
+
+    // 🔹 Tidak menyimpan ke database — hanya return hasil analisis
+    return response()->json([
+        "status" => true,
+        "message" => "Analisis validitas soal berhasil",
+        "data" => $decoded
+    ]);
+}
+
 
     // Gak jadi di pake
     // public function applySuggestion(Request $request, Question $question)
