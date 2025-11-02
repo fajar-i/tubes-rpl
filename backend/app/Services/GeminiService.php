@@ -173,23 +173,46 @@ class GeminiService
         // 🔹 Instruksi baru agar AI bertindak sebagai tool evaluasi validitas konten soal
         $prompt = "Analisis soal pilihan ganda berikut berdasarkan materi ajar dan taksonomi Bloom.
         Soal: \"$question\"
-        Pilihan jawaban: $optionsText
+        Pilihan jawaban:
+        $optionsText
         Materi: \"$material\"
         Kunci Jawaban: \"$answerKey\"
 
         Tugas kamu:
-        1. Tentukan apakah soal dan pilihan jawaban relevan dengan materi.
-        2. Jelaskan alasannya secara singkat.
-        3. Tentukan level Taksonomi Bloom dari soal (C1 = Remembering, C2 = Understanding, C3 = Applying, C4 = Analyzing, C5 = Evaluating, C6 = Creating).
-        4. Jika soal atau pilihannya tidak valid, berikan saran versi yang diperbaiki.
-        - \"ai_suggestion_question\" untuk saran teks soalnya.
-        - \"ai_suggestion_options\" untuk saran pilihan jawabannya (dalam bentuk array JSON).
+        1. Analisis validitas isi soal berdasarkan kesesuaian dengan materi dan indikator pembelajaran.
+        2. Beri skor 1–4 untuk tiap aspek berikut:
+        - kesesuaian_tujuan (apakah soal sesuai dengan tujuan pembelajaran),
+        - kesesuaian_indikator (apakah sesuai dengan indikator pembelajaran),
+        - kedalaman_kognitif (apakah sesuai tingkat kognitif yang diharapkan),
+        - kejelasan_perumusan (apakah kalimat soal dan opsi jelas),
+        - kesesuaian_bentuk (apakah bentuk soal sesuai, misalnya pilihan ganda),
+        - kesesuaian_dengan_materi (apakah konten relevan dengan materi ajar).
+        3. Hitung rata-rata skor dari seluruh aspek.
+        4. Tentukan kesimpulan validitas soal:
+        - \"Valid\" jika rata-rata ≥ 3.5
+        - \"Sebagian Valid\" jika antara 2.5–3.4
+        - \"Tidak Valid\" jika < 2.5
+        5. Tentukan level Taksonomi Bloom dari soal (C1–C6).
+        6. Jika soal atau pilihannya tidak valid, berikan saran versi yang diperbaiki:
+        - \"ai_suggestion_question\" untuk saran teks soal,
+        - \"ai_suggestion_options\" untuk saran pilihan jawaban dalam array JSON.
 
-        Jawablah **hanya dalam format JSON** seperti ini:
+        Jawablah **hanya dalam format JSON** seperti berikut (tidak boleh ada teks lain di luar JSON):
+
         {
         \"is_valid\": true/false,
-        \"note\": \"penjelasan singkat\",
+        \"note\": \"penjelasan singkat alasan valid/tidak\",
         \"bloom_taxonomy\": \"C? - Nama Level\",
+        \"skor\": {
+            \"kesesuaian_tujuan\": 1-4,
+            \"kesesuaian_indikator\": 1-4,
+            \"kedalaman_kognitif\": 1-4,
+            \"kejelasan_perumusan\": 1-4,
+            \"kesesuaian_bentuk\": 1-4,
+            \"kesesuaian_dengan_materi\": 1-4
+        },
+        \"rata_rata_skor\": <number>,
+        \"kesimpulan_validitas\": \"Valid\" | \"Sebagian Valid\" | \"Tidak Valid\",
         \"ai_suggestion_question\": \"Saran perbaikan untuk soal\",
         \"ai_suggestion_options\": [
             {\"option_code\": \"A\", \"text\": \"pilihan baru 1\", \"is_right\": false},
@@ -198,6 +221,7 @@ class GeminiService
             {\"option_code\": \"D\", \"text\": \"pilihan baru 4\", \"is_right\": false}
         ]
         }";
+
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
