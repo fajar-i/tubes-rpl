@@ -180,7 +180,7 @@ class GeminiService
 
         Tugas kamu:
         1. Analisis validitas isi soal berdasarkan kesesuaian dengan materi dan indikator pembelajaran.
-        2. Beri skor 1–4 untuk tiap aspek berikut:
+        2. Beri skor 1-4 untuk tiap aspek berikut:
         - kesesuaian_tujuan (apakah soal sesuai dengan tujuan pembelajaran),
         - kesesuaian_indikator (apakah sesuai dengan indikator pembelajaran),
         - kedalaman_kognitif (apakah sesuai tingkat kognitif yang diharapkan),
@@ -190,12 +190,12 @@ class GeminiService
         3. Hitung rata-rata skor dari seluruh aspek.
         4. Tentukan kesimpulan validitas soal:
         - \"Valid\" jika rata-rata ≥ 3.5
-        - \"Sebagian Valid\" jika antara 2.5–3.4
+        - \"Sebagian Valid\" jika antara 2.5-3.4
         - \"Tidak Valid\" jika < 2.5
-        5. Tentukan level Taksonomi Bloom dari soal (C1–C6).
+        5. Tentukan level Taksonomi Bloom dari soal (C1-C6).
         6. Jika soal atau pilihannya tidak valid, berikan saran versi yang diperbaiki:
-        - \"ai_suggestion_question\" untuk saran teks soal,
-        - \"ai_suggestion_options\" untuk saran pilihan jawaban dalam array JSON.
+        - \"ai_suggestion_question\" untuk saran teks soal dengan ketentuan saran soalnya berasal dari materi,
+        - \"ai_suggestion_options\" untuk saran pilihan jawaban dalam array JSON dengan ketentuan saran pilihan jawaban berasal dari materi.
 
         Jawablah **hanya dalam format JSON** seperti berikut (tidak boleh ada teks lain di luar JSON):
 
