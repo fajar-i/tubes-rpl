@@ -179,25 +179,36 @@ class GeminiService
         Kunci Jawaban: \"$answerKey\"
 
         Tugas kamu:
-        1. Analisis validitas isi soal berdasarkan kesesuaian dengan materi dan indikator pembelajaran.
-        2. Beri skor 1-4 untuk tiap aspek berikut:
-        - kesesuaian_tujuan (apakah soal sesuai dengan tujuan pembelajaran),
-        - kesesuaian_indikator (apakah sesuai dengan indikator pembelajaran),
-        - kedalaman_kognitif (apakah sesuai tingkat kognitif yang diharapkan),
-        - kejelasan_perumusan (apakah kalimat soal dan opsi jelas),
-        - kesesuaian_bentuk (apakah bentuk soal sesuai, misalnya pilihan ganda),
-        - kesesuaian_dengan_materi (apakah konten relevan dengan materi ajar).
-        3. Hitung rata-rata skor dari seluruh aspek.
-        4. Tentukan kesimpulan validitas soal:
-        - \"Valid\" jika rata-rata ≥ 3.5
-        - \"Sebagian Valid\" jika antara 2.5-3.4
-        - \"Tidak Valid\" jika < 2.5
-        5. Tentukan level Taksonomi Bloom dari soal (C1-C6).
-        6. Jika soal atau pilihannya tidak valid, berikan saran versi yang diperbaiki:
-        - \"ai_suggestion_question\" untuk saran teks soal dengan ketentuan saran soalnya berasal dari materi,
-        - \"ai_suggestion_options\" untuk saran pilihan jawaban dalam array JSON dengan ketentuan saran pilihan jawaban berasal dari materi.
+        1. Analisis validitas isi soal berdasarkan kesesuaian dengan MATERI AJAR dan TUJUAN PEMBELAJARAN.
+        - Jika isi soal tidak membahas topik, istilah, atau konsep yang ada dalam materi, maka soal otomatis 'Tidak Valid' (meskipun strukturnya baik).
+        - Jika soal menggunakan konteks dari mata pelajaran lain (misalnya Bahasa Indonesia padahal materi Literasi Digital), maka soal otomatis 'Tidak Valid'.
+        - Jangan menilai hanya dari kejelasan kalimat atau bentuk soal, tetapi dari relevansi substansi terhadap materi.
 
-        Jawablah **hanya dalam format JSON** seperti berikut (tidak boleh ada teks lain di luar JSON):
+        2. Beri skor 1–4 untuk tiap aspek berikut:
+        - kesesuaian_tujuan
+        - kesesuaian_indikator
+        - kedalaman_kognitif
+        - kejelasan_perumusan
+        - kesesuaian_bentuk
+        - kesesuaian_dengan_materi
+
+        3. Aturan penilaian WAJIB:
+        - Jika soal TIDAK relevan dengan materi → semua skor maksimum 2, rata-rata < 2.5, dan kesimpulan = 'Tidak Valid'.
+        - Jika hanya sebagian aspek relevan → rata-rata antara 2.5–3.4 dan kesimpulan = 'Sebagian Valid'.
+        - Hanya jika SEMUA aspek sesuai (≥3) dan materi relevan barulah kesimpulan = 'Valid'.
+
+        4. Hitung rata-rata skor dari seluruh aspek.
+        5. Tentukan kesimpulan validitas soal:
+        - 'Valid' jika rata-rata ≥ 3.5 dan semua aspek minimal 3.
+        - 'Sebagian Valid' jika 2.5 ≤ rata-rata < 3.5.
+        - 'Tidak Valid' jika rata-rata < 2.5 atau soal tidak relevan dengan materi.
+
+        6. Tentukan level Taksonomi Bloom dari soal (C1–C6).
+        7. Jika soal atau pilihan jawabannya tidak valid, berikan saran perbaikan berdasarkan materi:
+        - 'ai_suggestion_question' berisi teks soal baru yang sesuai dengan materi.
+        - 'ai_suggestion_options' berisi pilihan jawaban baru dalam format JSON.
+
+        Jawablah **hanya dalam format JSON** tanpa teks tambahan seperti berikut:
 
         {
         \"is_valid\": true/false,
@@ -221,8 +232,6 @@ class GeminiService
             {\"option_code\": \"D\", \"text\": \"pilihan baru 4\", \"is_right\": false}
         ]
         }";
-
-
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($url, [
