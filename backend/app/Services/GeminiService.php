@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Project;
+use App\Models\Question;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -118,10 +120,10 @@ class GeminiService
     protected function buildUrl(string $model = null): string
     {
         $model = $model ?? $this->defaultModel;
-        
+
         // Endpoint: /v1beta/models/{model}:generateContent
-        $endpoint = "v1beta/models/{$model}:generateContent"; 
-        
+        $endpoint = "v1beta/models/{$model}:generateContent";
+
         return "{$this->apiUrl}/{$endpoint}?key={$this->apiKey}";
     }
 
@@ -152,15 +154,19 @@ class GeminiService
         return $json['candidates'][0]['content']['parts'][0]['text'] ?? 'Model response blocked or empty.';
     }
 
-    public function validateQuestionWithBloom(string $question, string $material, $options = null)
+    public function validateQuestionWithBloom(Question $question, string $material)
     {
         $url = $this->buildUrl();
+        $Project = Project::where('id', $question->project_id)->first();
+        $profil_Ujian = "$Project->mata_pelajaran kelas $Project->kelas semester $Project->semester";
+        $capaianPembelajaran = $Project->CapaianPembelajaran;
+        $indikatorKetercapaianPembelajaran = $Project->indikatorKetercapaianPembelajaran;
 
         // 🔹 Siapkan teks opsi agar mudah dibaca AI
         $optionsText = '';
         $answerKey = null;
-        if ($options && count($options) > 0) {
-            foreach ($options as $opt) {
+        if ($question->options && count($question->options) > 0) {
+            foreach ($question->options as $opt) {
                 $optionsText .= $opt->option_code . '. ' . $opt->text . "\n";
                 if (isset($opt->is_right) && $opt->is_right == 1) {
                     $answerKey = $opt->option_code;
@@ -170,13 +176,17 @@ class GeminiService
             $optionsText = '(Belum ada opsi)';
         }
 
+
         // 🔹 Instruksi baru agar AI bertindak sebagai tool evaluasi validitas konten soal
         $prompt = "Analisis soal pilihan ganda berikut berdasarkan materi ajar dan taksonomi Bloom.
-        Soal: \"$question\"
+        Soal: \"$question->text\"
         Pilihan jawaban:
         $optionsText
         Materi: \"$material\"
         Kunci Jawaban: \"$answerKey\"
+        Capaian pembelajaran: \"$capaianPembelajaran\"
+        Indikator soal: \"$indikatorKetercapaianPembelajaran\"
+        Profil ujian: \"$profil_Ujian\"
 
         Tugas kamu:
         1. Analisis validitas isi soal berdasarkan kesesuaian dengan MATERI AJAR dan TUJUAN PEMBELAJARAN.
@@ -216,11 +226,17 @@ class GeminiService
         \"bloom_taxonomy\": \"C? - Nama Level\",
         \"skor\": {
             \"kesesuaian_tujuan\": 1-4,
+            \"penjelasan_nilai_tujuan\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
             \"kesesuaian_indikator\": 1-4,
+            \"penjelasan_nilai_indikator\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
             \"kedalaman_kognitif\": 1-4,
+            \"penjelasan_nilai_kedalaman_kognitif\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
             \"kejelasan_perumusan\": 1-4,
+            \"penjelasan_nilai_perumusan\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
             \"kesesuaian_bentuk\": 1-4,
+            \"penjelasan_nilai_bentuk\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
             \"kesesuaian_dengan_materi\": 1-4
+            \"penjelasan_nilai_kesesuaian_materi\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
         },
         \"rata_rata_skor\": <number>,
         \"kesimpulan_validitas\": \"Valid\" | \"Sebagian Valid\" | \"Tidak Valid\",
