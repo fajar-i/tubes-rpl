@@ -178,76 +178,105 @@ class GeminiService
 
 
         // 🔹 Instruksi baru agar AI bertindak sebagai tool evaluasi validitas konten soal
-        $prompt = "Analisis soal pilihan ganda berikut berdasarkan materi ajar dan taksonomi Bloom.
-        Soal: \"$question->text\"
-        Pilihan jawaban:
-        $optionsText
-        Materi: \"$material\"
-        Kunci Jawaban: \"$answerKey\"
-        Capaian pembelajaran: \"$capaianPembelajaran\"
-        Indikator soal: \"$indikatorKetercapaianPembelajaran\"
-        Profil ujian: \"$profil_Ujian\"
+        $prompt = "Kamu adalah seorang ahli (expert) evaluasi pendidikan dan psikometri. Tugasmu adalah menganalisis kualitas butir soal pilihan ganda berikut secara kualitatif (telaah teoretis) berdasarkan konteks yang diberikan.
 
-        Tugas kamu:
-        1. Analisis validitas isi soal berdasarkan kesesuaian dengan MATERI AJAR dan TUJUAN PEMBELAJARAN.
-        - Jika isi soal tidak membahas topik, istilah, atau konsep yang ada dalam materi, maka soal otomatis 'Tidak Valid' (meskipun strukturnya baik).
-        - Jika soal menggunakan konteks dari mata pelajaran lain (misalnya Bahasa Indonesia padahal materi Literasi Digital), maka soal otomatis 'Tidak Valid'.
-        - Jangan menilai hanya dari kejelasan kalimat atau bentuk soal, tetapi dari relevansi substansi terhadap materi.
+                    KONTEKS SOAL:
+                    Soal: \"$question->text\"
+                    Pilihan jawaban: $optionsText
+                    Kunci Jawaban: \"$answerKey\"
+                    Materi Ajar: \"$material\"
+                    Capaian Pembelajaran: \"$capaianPembelajaran\"
+                    Indikator Soal: \"$indikatorKetercapaianPembelajaran\"
+                    Profil Ujian: \"$profil_Ujian\" (Contoh: 'Formatif', 'Sumatif')
 
-        2. Beri skor 1–4 untuk tiap aspek berikut:
-        - kesesuaian_tujuan
-        - kesesuaian_indikator
-        - kedalaman_kognitif
-        - kejelasan_perumusan
-        - kesesuaian_bentuk
-        - kesesuaian_dengan_materi
+                    TUGAS KAMU:
 
-        3. Aturan penilaian WAJIB:
-        - Jika soal TIDAK relevan dengan materi → semua skor maksimum 2, rata-rata < 2.5, dan kesimpulan = 'Tidak Valid'.
-        - Jika hanya sebagian aspek relevan → rata-rata antara 2.5–3.4 dan kesimpulan = 'Sebagian Valid'.
-        - Hanya jika SEMUA aspek sesuai (≥3) dan materi relevan barulah kesimpulan = 'Valid'.
+                    Tugas 1: Validasi Substansi (Gatekeeper)
+                    Analisis relevansi mendasar soal.
+                    - Cek 1: Apakah substansi soal (stem dan pilihan) relevan dengan \"$material\"?
+                    - Cek 2: Apakah \"$answerKey\" benar secara keilmuan berdasarkan \"$material\"?
+                    - Cek 3: Apakah soal menggunakan konteks mata pelajaran yang benar (sesuai materi)?
+                    - ATURAN: Jika Cek 1 salah, ATAU Cek 2 salah, ATAU Cek 3 salah, soal otomatis 'Tidak Valid'. Hentikan penilaian mendalam dan langsung beri skor 1 untuk semua aspek di Tugas 2.
 
-        4. Hitung rata-rata skor dari seluruh aspek.
-        5. Tentukan kesimpulan validitas soal:
-        - 'Valid' jika rata-rata ≥ 3.5 dan semua aspek minimal 3.
-        - 'Sebagian Valid' jika 2.5 ≤ rata-rata < 3.5.
-        - 'Tidak Valid' jika rata-rata < 2.5 atau soal tidak relevan dengan materi.
+                    Tugas 2: Penilaian Aspek (Skala Likert 1-5)
+                    Berikan skor 1-5 untuk tiap aspek berikut.
+                    Gunakan definisi skala ini:
+                    1 = Sangat Tidak Sesuai / Buruk
+                    2 = Tidak Sesuai
+                    3 = Cukup Sesuai (Perlu revisi minor)
+                    4 = Sesuai
+                    5 = Sangat Sesuai / Sangat Baik
 
-        6. Tentukan level Taksonomi Bloom dari soal (C1–C6).
-        7. Jika soal atau pilihan jawabannya tidak valid, berikan saran perbaikan berdasarkan materi:
-        - 'ai_suggestion_question' berisi teks soal baru yang sesuai dengan materi.
-        - 'ai_suggestion_options' berisi pilihan jawaban baru dalam format JSON.
+                    Aspek yang Dinilai:
+                    1. kesesuaian_tujuan: Seberapa relevan soal dengan $capaianPembelajaran?
+                    2. kesesuaian_indikator: Seberapa tepat soal mengukur $indikatorKetercapaianPembelajaran secara spesifik?
+                    3. kedalaman_kognitif: Seberapa sesuai level kognitif soal dengan yang dituntut oleh indikator? (Gunakan juga $profil_Ujian sebagai pertimbangan).
+                    4. kejelasan_perumusan: Seberapa jelas stem soal, bebas ambigu, komunikatif, dan sesuai kaidah bahasa? Apakah pilihan jawaban homogen?
+                    5. kesesuaian_bentuk: Seberapa tepat bentuk Pilihan Ganda digunakan untuk mengukur indikator ini? (Gunakan $profil_Ujian sebagai pertimbangan).
+                    6. kesesuaian_materi: Seberapa akurat fakta/konsep pada stem, semua pilihan jawaban, dan kunci jawaban berdasarkan $material?
 
-        Jawablah **hanya dalam format JSON** tanpa teks tambahan seperti berikut:
+                    Tugas 3: Identifikasi Taksonomi Bloom
+                    Tentukan level Taksonomi Bloom dari soal (C1-C6).
 
-        {
-        \"is_valid\": true/false,
-        \"note\": \"penjelasan singkat alasan valid/tidak\",
-        \"bloom_taxonomy\": \"C? - Nama Level\",
-        \"skor\": {
-            \"kesesuaian_tujuan\": 1-4,
-            \"penjelasan_nilai_tujuan\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
-            \"kesesuaian_indikator\": 1-4,
-            \"penjelasan_nilai_indikator\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
-            \"kedalaman_kognitif\": 1-4,
-            \"penjelasan_nilai_kedalaman_kognitif\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
-            \"kejelasan_perumusan\": 1-4,
-            \"penjelasan_nilai_perumusan\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
-            \"kesesuaian_bentuk\": 1-4,
-            \"penjelasan_nilai_bentuk\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
-            \"kesesuaian_dengan_materi\": 1-4
-            \"penjelasan_nilai_kesesuaian_materi\": \" jelaskan penilaianmu dan berikan saran perbaikan secara singkat\",
-        },
-        \"rata_rata_skor\": <number>,
-        \"kesimpulan_validitas\": \"Valid\" | \"Sebagian Valid\" | \"Tidak Valid\",
-        \"ai_suggestion_question\": \"Saran perbaikan untuk soal\",
-        \"ai_suggestion_options\": [
-            {\"option_code\": \"A\", \"text\": \"pilihan baru 1\", \"is_right\": false},
-            {\"option_code\": \"B\", \"text\": \"pilihan baru 2\", \"is_right\": true},
-            {\"option_code\": \"C\", \"text\": \"pilihan baru 3\", \"is_right\": false},
-            {\"option_code\": \"D\", \"text\": \"pilihan baru 4\", \"is_right\": false}
-        ]
-        }";
+                    Tugas 4: Kalkulasi dan Kesimpulan
+                    1. Hitung rata-rata skor dari 6 aspek.
+                    2. Tentukan kesimpulan validitas berdasarkan aturan WAJIB berikut:
+                    - 'Valid': Jika rata-rata skor >= 4.0 DAN tidak ada skor aspek individual di bawah 3.
+                    - 'Sebagian Valid (Revisi)': Jika rata-rata skor >= 2.5 TAPI tidak memenuhi kriteria 'Valid'.
+                    - 'Tidak Valid': Jika rata-rata skor < 2.5 ATAU jika Gatekeeper (Tugas 1) gagal.
+                    3. Tentukan 'is_valid' (boolean):
+                    - 'false' HANYA JIKA 'kesimpulan_validitas' adalah 'Tidak Valid'.
+                    - 'true' JIKA 'kesimpulan_validitas' adalah 'Valid' ATAU 'Sebagian Valid'.
+                    4. Buat 'note' (penjelasan singkat) yang merangkum alasan kesimpulan.
+
+                    Tugas 5: Saran Perbaikan
+                    Jika 'kesimpulan_validitas' BUKAN 'Valid' (artinya 'Sebagian Valid' atau 'Tidak Valid'), berikan saran perbaikan konkret.
+                    - Fokus pada perbaikan aspek dengan skor terendah.
+                    - Jika Gatekeeper gagal, buat soal BARU yang relevan.
+
+                    Tugas 6: Format Output
+                    Jawablah HANYA dalam format JSON yang ketat. Jangan ada teks pembuka atau penutup.
+
+                    {
+                    \"is_valid\": true/false,
+                    \"note\": \"penjelasan singkat alasan valid/tidak\",
+                    \"bloom_taxonomy\": \"C? - Nama Level\",
+                    \"skor\": {
+                        \"kesesuaian_tujuan\": {
+                        \"skor\": 1-5,
+                        \"penjelasan\": \"Jelaskan alasan skormu di sini.\"
+                        },
+                        \"kesesuaian_indikator\": {
+                        \"skor\": 1-5,
+                        \"penjelasan\": \"Jelaskan alasan skormu di sini.\"
+                        },
+                        \"kedalaman_kognitif\": {
+                        \"skor\": 1-5,
+                        \"penjelasan\": \"Jelaskan alasan skormu dan perbandingannya dengan indikator.\"
+                        },
+                        \"kejelasan_perumusan\": {
+                        \"skor\": 1-5,
+                        \"penjelasan\": \"Jelaskan alasan skormu (tinjau stem, bahasa, homogenitas pilihan).\"
+                        },
+                        \"kesesuaian_bentuk\": {
+                        \"skor\": 1-5,
+                        \"penjelasan\": \"Jelaskan alasan skormu terkait ketepatan bentuk soal PG.\"
+                        },
+                        \"kesesuaian_materi\": {
+                        \"skor\": 1-5,
+                        \"penjelasan\": \"Jelaskan alasan skormu (tinjau akurasi fakta & kunci jawaban).\"
+                        }
+                    },
+                    \"rata_rata_skor\": <number>,
+                    \"kesimpulan_validitas\": \"Valid\" | \"Sebagian Valid (Revisi)\" | \"Tidak Valid\",
+                    \"ai_suggestion_question\": \"Saran perbaikan untuk soal (kosongkan jika 'Valid').\",
+                    \"ai_suggestion_options\": [
+                        {\"option_code\": \"A\", \"text\": \"pilihan baru 1\", \"is_right\": false},
+                        {\"option_code\": \"B\", \"text\": \"pilihan baru 2\", \"is_right\": true},
+                        {\"option_code\": \"C\", \"text\": \"pilihan baru 3\", \"is_right\": false},
+                        {\"option_code\": \"D\", \"text\": \"pilihan baru 4\", \"is_right\": false}
+                    ]
+                    }";
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($url, [
