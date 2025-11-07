@@ -35,7 +35,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+      <div className="relative w-full max-w-lg h-9/12 lg:max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Edit Proyek
@@ -138,6 +138,48 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                   })
                 }
                 placeholder="Masukkan semester"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="tujuan_pembelajaran"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Tujuan Pembelajaran
+              </label>
+              <textarea
+                id="semester"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                value={editedProject.tujuan_pembelajaran || ""}
+                onChange={(e) =>
+                  setEditedProject({ 
+                    ...editedProject, 
+                    tujuan_pembelajaran: e.target.value 
+                  })
+                }
+                placeholder="Masukkan tujuan pembelajaran"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="indikator_ketercapaian_pembelajaran"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Indikator Ketercapaian Pembelajaran
+              </label>
+              <textarea
+                id="semester"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                value={editedProject.indikator_ketercapaian_pembelajaran || ""}
+                onChange={(e) =>
+                  setEditedProject({ 
+                    ...editedProject, 
+                    indikator_ketercapaian_pembelajaran: e.target.value 
+                  })
+                }
+                placeholder="Masukkan indikator ketercapaian pembelajaran"
               />
             </div>
           </div>

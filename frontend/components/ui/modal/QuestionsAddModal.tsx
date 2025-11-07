@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
-interface AddQuestionsModalProps {
+interface QuestionsAddModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (count: number) => void;
 }
 
-const AddQuestionsModal: React.FC<AddQuestionsModalProps> = ({
+const QuestionsAddModal: React.FC<QuestionsAddModalProps> = ({
   isOpen,
   onClose,
   onAdd,
@@ -49,12 +49,10 @@ const AddQuestionsModal: React.FC<AddQuestionsModalProps> = ({
                 Jumlah Soal
               </label>
               <input
-                type="number"
+                type="text"
                 id="questionCount"
-                min="1"
-                max="100"
                 value={questionCount}
-                onChange={(e) => setQuestionCount(parseInt(e.target.value) || 1)}
+                onChange={(e) => setQuestionCount(parseInt(e.target.value) || 0)}
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:text-white"
                 placeholder="Masukkan jumlah soal (1-100)"
                 required
@@ -84,4 +82,4 @@ const AddQuestionsModal: React.FC<AddQuestionsModalProps> = ({
   );
 };
 
-export default AddQuestionsModal;
+export default QuestionsAddModal;

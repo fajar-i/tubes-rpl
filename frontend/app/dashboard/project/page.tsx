@@ -7,7 +7,7 @@ import Loader from "@/components/ui/Loader";
 import ProjectEditModal from "@/components/ui/modal/ProjectEditModal";
 import { useProjects } from "@/context/ProjectContext";
 import ProjectAddModal from "@/components/ui/modal/ProjectAddModal";
-import { EyeIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { AcademicCapIcon, BookOpenIcon, CalendarIcon, DocumentCheckIcon, EyeIcon, PencilSquareIcon, SparklesIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 const ProjectPage: React.FC = () => {
   const router = useRouter();
@@ -70,9 +70,15 @@ const ProjectPage: React.FC = () => {
           onSave={updateProject}
         />
       )}
-
+      {!projects || projects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[200px] rounded-lg">
+          <h3 className="text-lg text-gray-600 mb-4">
+            Belum ada Proyek yang dibuat
+          </h3>
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {projects.map((p) => (
             <div
               key={p.public_id}
@@ -100,26 +106,32 @@ const ProjectPage: React.FC = () => {
                 <div className="space-y-2">
                   {p.mata_pelajaran && (
                     <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
+                      <BookOpenIcon className="h-5 w-5 mr-2"/>
                       <span>{p.mata_pelajaran}</span>
                     </div>
                   )}
                   {p.kelas && (
                     <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
+                      <AcademicCapIcon className="h-5 w-5 mr-2"/>
                       <span>{p.kelas}</span>
                     </div>
                   )}
                   {p.semester && (
                     <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                      <CalendarIcon className="h-5 w-5 mr-2"/>
                       <span>{p.semester}</span>
+                    </div>
+                  )}
+                  {p.tujuan_pembelajaran && (
+                    <div className="flex items-center text-gray-700 dark:text-gray-300">
+                      <SparklesIcon className="h-10 mr-1"/>
+                      <span>{p.tujuan_pembelajaran}</span>
+                    </div>
+                  )}
+                  {p.indikator_ketercapaian_pembelajaran && (
+                    <div className="flex items-center text-gray-700 dark:text-gray-300">
+                      <DocumentCheckIcon className="h-10 mr-1"/>
+                      <span>{p.indikator_ketercapaian_pembelajaran}</span>
                     </div>
                   )}
                 </div>
@@ -148,6 +160,7 @@ const ProjectPage: React.FC = () => {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 };

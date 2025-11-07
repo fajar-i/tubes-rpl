@@ -70,6 +70,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           mata_pelajaran: project.mata_pelajaran,
           kelas: project.kelas,
           semester: project.semester,
+          tujuan_pembelajaran: project.tujuan_pembelajaran,
+          indikator_ketercapaian_pembelajaran: project.indikator_ketercapaian_pembelajaran,
           _method: 'PUT',
         },
         {
