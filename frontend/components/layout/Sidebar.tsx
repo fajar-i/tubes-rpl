@@ -64,10 +64,10 @@ const Sidebar = () => {
                       <Link
                         href={link.href}
                         className={`flex items-center p-2 rounded-md text-base font-medium ${
-                          isActive ? "bg-[#E0F7FA] text-[#00A1A9]" : "text-gray-700 hover:bg-gray-100"
+                          isActive ? "bg-[#E0F7FA] text-[#00A1A9]" : "text-gray-700 hover:bg-gray-100 hover:text-[#00A1A9]"
                         }`}
                       >
-                        <Icon className="h-5 w-5 mr-3" />
+                        <Icon className="h-5 w-5 mr-3 group-hover:text-[#00A1A9]" />
                         {link.name}
                       </Link>
                     </li>
