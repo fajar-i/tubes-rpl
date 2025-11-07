@@ -158,7 +158,7 @@ class GeminiService
     {
         $url = $this->buildUrl();
         $Project = Project::where('id', $question->project_id)->first();
-        $profil_Ujian = "$Project->mata_pelajaran kelas $Project->kelas semester $Project->semester";
+        $profil_Ujian = "$Project->nama_ujian : $Project->mata_pelajaran kelas $Project->kelas semester $Project->semester";
         $capaianPembelajaran = $Project->CapaianPembelajaran;
         $indikatorKetercapaianPembelajaran = $Project->indikatorKetercapaianPembelajaran;
 
