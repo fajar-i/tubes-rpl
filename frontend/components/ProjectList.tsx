@@ -1,55 +1,27 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useMyAppHook } from "@/context/AppProvider";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import toast from "react-hot-toast";
-import Loader from "./ui/Loader";
-import { Project } from "@/types";
-import { AxiosInstance } from "@/lib/axios";
+import { useProjects } from "@/context/ProjectContext";
 
 const ProjectList: React.FC = () => {
   const router = useRouter();
-  const { authToken } = useMyAppHook();
-  const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState<Project[]>([]);
- 
+  const { projects = [], fetchProjects } = useProjects();
+
   useEffect(() => {
-    const fetchAllProjects = async () => {
-      try {
-        const response = await AxiosInstance.get(`/projects`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`
-          }
-        });
-        setProjects(response.data.projects);
-      } catch (error) {
-        console.log("fetch all projects error : " + error);
-        toast.error("Failed to fetch projects.");
-      }
-    };
-
-    setLoading(true);
-    if (!authToken) {
-      router.push("/auth");
-      return;
+    if (fetchProjects) {
+      fetchProjects();
     }
-    
-    fetchAllProjects().finally(() => {
-      setLoading(false);
-    });
-  }, [authToken, router]);
-
-  if (loading) {
-    return <Loader />;
-  }
+  }, [router, fetchProjects]);
 
   return (
     <>
       {!projects || projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[200px] bg-gray-50 rounded-lg p-8">
-          <h3 className="text-xl text-gray-600 mb-4">Belum ada Proyek yang dibuat</h3>
+        <div className="flex flex-col items-center justify-center min-h-[200px] rounded-lg p-8">
+          <h3 className="text-lg text-gray-600 mb-4">
+            Belum ada Proyek yang dibuat
+          </h3>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

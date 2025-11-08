@@ -19,6 +19,8 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
     mata_pelajaran: "",
     kelas: "",
     semester: "",
+    tujuan_pembelajaran: "",
+    indikator_ketercapaian_pembelajaran: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,7 +35,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+      <div className="relative w-full max-w-2xl h-9/12 mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Tambah Proyek Baru
@@ -122,6 +124,42 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                   setNewProject({ ...newProject, semester: e.target.value })
                 }
                 placeholder="Masukkan semester"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="tujuan_pembelajaran"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Tujuan Pembelajaran
+              </label>
+              <textarea
+                id="semester"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                value={newProject.tujuan_pembelajaran}
+                onChange={(e) =>
+                  setNewProject({ ...newProject, tujuan_pembelajaran: e.target.value })
+                }
+                placeholder="Masukkan tujuan pembelajaran"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="indikator_ketercapaian_pembelajaran"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Indikator Ketercapaian Pembelajaran
+              </label>
+              <textarea
+                id="semester"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                value={newProject.indikator_ketercapaian_pembelajaran}
+                onChange={(e) =>
+                  setNewProject({ ...newProject, indikator_ketercapaian_pembelajaran: e.target.value })
+                }
+                placeholder="Masukkan indikator ketercapaian pembelajaran"
               />
             </div>
           </div>

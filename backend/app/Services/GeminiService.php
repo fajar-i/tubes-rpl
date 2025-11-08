@@ -157,10 +157,10 @@ class GeminiService
     public function validateQuestionWithBloom(Question $question, string $material)
     {
         $url = $this->buildUrl();
-        $Project = Project::where('id', $question->project_id)->first();
-        $profil_Ujian = "$Project->nama_ujian : $Project->mata_pelajaran kelas $Project->kelas semester $Project->semester";
-        $capaianPembelajaran = $Project->CapaianPembelajaran;
-        $indikatorKetercapaianPembelajaran = $Project->indikatorKetercapaianPembelajaran;
+        $project = Project::where('id', $question->project_id)->first();
+        $profil_ujian = "$project->nama_ujian : $project->mata_pelajaran kelas $project->kelas semester $project->semester";
+        $capaian_pembelajaran = $project->capaian_pembelajaran;
+        $indikator_ketercapaian_pembelajaran = $project->indikator_ketercapaian_pembelajaran;
 
         // 🔹 Siapkan teks opsi agar mudah dibaca AI
         $optionsText = '';
@@ -185,9 +185,9 @@ class GeminiService
                     Pilihan jawaban: $optionsText
                     Kunci Jawaban: \"$answerKey\"
                     Materi Ajar: \"$material\"
-                    Capaian Pembelajaran: \"$capaianPembelajaran\"
-                    Indikator Soal: \"$indikatorKetercapaianPembelajaran\"
-                    Profil Ujian: \"$profil_Ujian\" (Contoh: 'Formatif', 'Sumatif')
+                    Capaian Pembelajaran: \"$capaian_pembelajaran\"
+                    Indikator Soal: \"$indikator_ketercapaian_pembelajaran\"
+                    Profil Ujian: \"$profil_ujian\" (Contoh: 'Formatif', 'Sumatif')
 
                     TUGAS KAMU:
 
@@ -208,11 +208,11 @@ class GeminiService
                     5 = Sangat Sesuai / Sangat Baik
 
                     Aspek yang Dinilai:
-                    1. kesesuaian_tujuan: Seberapa relevan soal dengan $capaianPembelajaran?
-                    2. kesesuaian_indikator: Seberapa tepat soal mengukur $indikatorKetercapaianPembelajaran secara spesifik?
-                    3. kedalaman_kognitif: Seberapa sesuai level kognitif soal dengan yang dituntut oleh indikator? (Gunakan juga $profil_Ujian sebagai pertimbangan).
+                    1. kesesuaian_tujuan: Seberapa relevan soal dengan $capaian_pembelajaran?
+                    2. kesesuaian_indikator: Seberapa tepat soal mengukur $indikator_ketercapaian_pembelajaran secara spesifik?
+                    3. kedalaman_kognitif: Seberapa sesuai level kognitif soal dengan yang dituntut oleh indikator? (Gunakan juga $profil_ujian sebagai pertimbangan).
                     4. kejelasan_perumusan: Seberapa jelas stem soal, bebas ambigu, komunikatif, dan sesuai kaidah bahasa? Apakah pilihan jawaban homogen?
-                    5. kesesuaian_bentuk: Seberapa tepat bentuk Pilihan Ganda digunakan untuk mengukur indikator ini? (Gunakan $profil_Ujian sebagai pertimbangan).
+                    5. kesesuaian_bentuk: Seberapa tepat bentuk Pilihan Ganda digunakan untuk mengukur indikator ini? (Gunakan $profil_ujian sebagai pertimbangan).
                     6. kesesuaian_materi: Seberapa akurat fakta/konsep pada stem, semua pilihan jawaban, dan kunci jawaban berdasarkan $material?
 
                     Tugas 3: Identifikasi Taksonomi Bloom

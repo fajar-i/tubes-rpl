@@ -56,6 +56,8 @@ export type Project = {
   mata_pelajaran?: string,
   kelas?: string,
   semester?: string,
+  tujuan_pembelajaran?: string,
+  indikator_ketercapaian_pembelajaran?: string,
   public_id: string,
 };
 
@@ -104,6 +106,33 @@ export type AIOptionSuggestion = {
   is_right: boolean;
 };
 
+type SkorAnalyze = {
+  kesesuaian_tujuan: {
+    skor: number,
+    penjelasan: string,
+  }; 
+  kesesuaian_indikator: {
+    skor: number,
+    penjelasan: string,
+  };
+  kedalaman_kognitif: {
+    skor: number,
+    penjelasan: string,
+  };
+  kejelasan_perumusan: {
+    skor: number,
+    penjelasan: string,
+  };
+  kesesuaian_bentuk: {
+    skor: number,
+    penjelasan: string,
+  };
+  kesesuaian_materi: {
+    skor: number,
+    penjelasan: string,
+  };
+}
+
 export type AIResultType = {
   id: number;
   text: string;
@@ -111,7 +140,10 @@ export type AIResultType = {
   ai_suggestion_question?: string | null;
   ai_suggestion_options?: AIOptionSuggestion[] | null;
   is_valid?: boolean;
-  validation_note?: string | null;
+  note?: string | null;
+  skor: SkorAnalyze;
+  kesimpulan_validitas: "Valid" | "Sebagian Valid" | "Tidak Valid";
+  rata_rata_skor: number | null;
   bloom_taxonomy?: string | null;
   showSuggestion?: boolean;
 };

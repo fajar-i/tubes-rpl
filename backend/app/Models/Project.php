@@ -12,7 +12,9 @@ class Project extends Model
         'nama_ujian',
         'mata_pelajaran',
         'kelas',
-        'semester'
+        'semester',
+        'tujuan_pembelajaran',
+        'indikator_ketercapaian_pembelajaran'
     ];
 
     protected $hidden = [

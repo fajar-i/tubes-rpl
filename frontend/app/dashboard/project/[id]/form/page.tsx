@@ -9,7 +9,7 @@ import Swal from "sweetalert2";
 import { AxiosInstance } from "@/lib/axios";
 import { OptionForm, QuestionForm } from "@/types";
 import EditableText from "@/components/ui/EditableText";
-import AddQuestionsModal from "@/components/ui/modal/AddQuestionsModal";
+import QuestionsAddModal from "@/components/ui/modal/QuestionsAddModal";
 
 export default function EditorPage() {
   const router = useRouter();
@@ -69,6 +69,7 @@ export default function EditorPage() {
           { id: Date.now() + i * 3, text: "Pilihan A" },
           { id: Date.now() + i * 3 + 1, text: "Pilihan B" },
           { id: Date.now() + i * 3 + 2, text: "Pilihan C" },
+          { id: Date.now() + i * 3 + 3, text: "Pilihan D" },
         ],
       };
       newQuestions.push(newQuestion);
@@ -410,7 +411,7 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <AddQuestionsModal
+      <QuestionsAddModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddMultipleQuestions}
