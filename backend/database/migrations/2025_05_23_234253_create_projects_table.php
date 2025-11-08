@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('mata_pelajaran')->nullable();
             $table->string('kelas')->nullable();
             $table->string('semester')->nullable();
-            $table->string('tujuan_pembelajaran')->nullable();
-            $table->string('indikator_ketercapaian_pembelajaran')->nullable();
+            $table->text('capaian_pembelajaran')->nullable();
+            $table->text('indikator_ketercapaian_pembelajaran')->nullable();
             $table->string('public_id')->unique()->nullable();
             $table->timestamps();
         });

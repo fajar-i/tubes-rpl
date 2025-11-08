@@ -19,7 +19,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
     mata_pelajaran: "",
     kelas: "",
     semester: "",
-    tujuan_pembelajaran: "",
+    capaian_pembelajaran: "",
     indikator_ketercapaian_pembelajaran: "",
   });
 
@@ -129,19 +129,19 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
 
             <div>
               <label
-                htmlFor="tujuan_pembelajaran"
+                htmlFor="capaian_pembelajaran"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Tujuan Pembelajaran
+                Capaian Pembelajaran
               </label>
               <textarea
-                id="semester"
+                id="capaian_pembelajaran"
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                value={newProject.tujuan_pembelajaran}
+                value={newProject.capaian_pembelajaran}
                 onChange={(e) =>
-                  setNewProject({ ...newProject, tujuan_pembelajaran: e.target.value })
+                  setNewProject({ ...newProject, capaian_pembelajaran: e.target.value })
                 }
-                placeholder="Masukkan tujuan pembelajaran"
+                placeholder="Masukkan capaian pembelajaran"
               />
             </div>
 

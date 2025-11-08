@@ -13,7 +13,7 @@ class Project extends Model
         'mata_pelajaran',
         'kelas',
         'semester',
-        'tujuan_pembelajaran',
+        'capaian_pembelajaran',
         'indikator_ketercapaian_pembelajaran'
     ];
 

@@ -42,9 +42,16 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addProject = async (project: Project): Promise<boolean> => {
     try {
-      const response = await AxiosInstance.post('/projects/', project, {
+      const response = await AxiosInstance.post('/projects/', {
+        nama_ujian: project.nama_ujian,
+        mata_pelajaran: project.mata_pelajaran,
+        kelas: project.kelas,
+        semester: project.semester,
+        capaian_pembelajaran: project.capaian_pembelajaran,
+        indikator_ketercapaian_pembelajaran: project.indikator_ketercapaian_pembelajaran
+      }, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
         },
       });
@@ -63,20 +70,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateProject = async (project: Project): Promise<boolean> => {
     try {
-      const response = await AxiosInstance.post(
+      const data = {
+        nama_ujian: project.nama_ujian,
+        mata_pelajaran: project.mata_pelajaran || '',
+        kelas: project.kelas || '',
+        semester: project.semester || '',
+        capaian_pembelajaran: project.capaian_pembelajaran || '',
+        indikator_ketercapaian_pembelajaran: project.indikator_ketercapaian_pembelajaran || ''
+      };
+      const response = await AxiosInstance.put(
         `/projects/${project.public_id}`,
-        {
-          nama_ujian: project.nama_ujian,
-          mata_pelajaran: project.mata_pelajaran,
-          kelas: project.kelas,
-          semester: project.semester,
-          tujuan_pembelajaran: project.tujuan_pembelajaran,
-          indikator_ketercapaian_pembelajaran: project.indikator_ketercapaian_pembelajaran,
-          _method: 'PUT',
-        },
+        data,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${authToken}`,
           },
         }
