@@ -34,7 +34,7 @@ class ProjectController extends Controller
             'mata_pelajaran' => 'nullable|string',
             'kelas' => 'nullable|string',
             'semester' => 'nullable|string',
-            'tujuan_pembelajaran' => 'nullable|string',
+            'capaian_pembelajaran' => 'nullable|string',
             'indikator_ketercapaian_pembelajaran' => 'nullable|string'
         ]);
         $validatedData['user_id'] = $user->id;
@@ -84,7 +84,7 @@ class ProjectController extends Controller
             'mata_pelajaran' => 'nullable|string',
             'kelas' => 'nullable|string',
             'semester' => 'nullable|string',
-            'tujuan_pembelajaran' => 'nullable|string',
+            'capaian_pembelajaran' => 'nullable|string',
             'indikator_ketercapaian_pembelajaran' => 'nullable|string'
         ]);
 

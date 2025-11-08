@@ -23,11 +23,15 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editedProject.nama_ujian.trim()) {
-      const success = await onSave(editedProject);
-      if (success) {
-        onClose();
+    try {
+      if (editedProject.nama_ujian.trim()) {
+        const success = await onSave(editedProject);
+        if (success) {
+          onClose();
+        }
       }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
     }
   };
 
@@ -143,22 +147,22 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
 
             <div>
               <label
-                htmlFor="tujuan_pembelajaran"
+                htmlFor="capaian_pembelajaran"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Tujuan Pembelajaran
+                Capaian Pembelajaran
               </label>
               <textarea
-                id="semester"
+                id="capaian_pembelajaran"
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                value={editedProject.tujuan_pembelajaran || ""}
+                value={editedProject.capaian_pembelajaran || ""}
                 onChange={(e) =>
                   setEditedProject({ 
                     ...editedProject, 
-                    tujuan_pembelajaran: e.target.value 
+                    capaian_pembelajaran: e.target.value 
                   })
                 }
-                placeholder="Masukkan tujuan pembelajaran"
+                placeholder="Masukkan capaian pembelajaran"
               />
             </div>
 
@@ -170,7 +174,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                 Indikator Ketercapaian Pembelajaran
               </label>
               <textarea
-                id="semester"
+                id="indikator_ketercapaian_pembelajaran"
                 className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                 value={editedProject.indikator_ketercapaian_pembelajaran || ""}
                 onChange={(e) =>

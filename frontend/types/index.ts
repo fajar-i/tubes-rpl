@@ -56,7 +56,7 @@ export type Project = {
   mata_pelajaran?: string,
   kelas?: string,
   semester?: string,
-  tujuan_pembelajaran?: string,
+  capaian_pembelajaran?: string,
   indikator_ketercapaian_pembelajaran?: string,
   public_id: string,
 };

@@ -7,7 +7,7 @@ import Loader from "@/components/ui/Loader";
 import ProjectEditModal from "@/components/ui/modal/ProjectEditModal";
 import { useProjects } from "@/context/ProjectContext";
 import ProjectAddModal from "@/components/ui/modal/ProjectAddModal";
-import { AcademicCapIcon, BookOpenIcon, CalendarIcon, DocumentCheckIcon, EyeIcon, PencilSquareIcon, SparklesIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 const ProjectPage: React.FC = () => {
   const router = useRouter();
@@ -105,32 +105,32 @@ const ProjectPage: React.FC = () => {
               <div className="px-6 py-4 space-y-3">
                 <div className="space-y-2">
                   {p.mata_pelajaran && (
-                    <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <BookOpenIcon className="h-5 w-5 mr-2"/>
+                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                      <p className="font-bold text-[#00A9A2]">Mata Pelajaran</p>
                       <span>{p.mata_pelajaran}</span>
                     </div>
                   )}
                   {p.kelas && (
-                    <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <AcademicCapIcon className="h-5 w-5 mr-2"/>
+                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                      <p className="font-bold text-[#00A9A2]">Kelas</p>
                       <span>{p.kelas}</span>
                     </div>
                   )}
                   {p.semester && (
-                    <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <CalendarIcon className="h-5 w-5 mr-2"/>
+                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                      <p className="font-bold text-[#00A9A2]">Semester</p>
                       <span>{p.semester}</span>
                     </div>
                   )}
-                  {p.tujuan_pembelajaran && (
-                    <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <SparklesIcon className="h-10 mr-1"/>
-                      <span>{p.tujuan_pembelajaran}</span>
+                  {p.capaian_pembelajaran && (
+                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                      <p className="font-bold text-[#00A9A2]">Capaian Pembelajaran</p>
+                      <span>{p.capaian_pembelajaran}</span>
                     </div>
                   )}
                   {p.indikator_ketercapaian_pembelajaran && (
-                    <div className="flex items-center text-gray-700 dark:text-gray-300">
-                      <DocumentCheckIcon className="h-10 mr-1"/>
+                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                      <p className="font-bold text-[#00A9A2]">Indikator Ketercapaian Pembelajaran</p>
                       <span>{p.indikator_ketercapaian_pembelajaran}</span>
                     </div>
                   )}

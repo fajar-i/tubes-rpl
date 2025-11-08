@@ -24,7 +24,7 @@ const ProjectHistory = () => {
                             className="flex items-center p-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md group"
                         >
                             <ClockIcon className="h-6 w-6 mr-3 group-hover:text-[#00A1A9]" />
-                            <span className="truncate hover:text-[#00A1A9]">{project.nama_ujian}</span>
+                            <span className="truncate group-hover:text-[#00A1A9]">{project.nama_ujian}</span>
                         </Link>
                     </li>
                 ))}
