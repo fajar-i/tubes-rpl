@@ -326,7 +326,7 @@ export default function EditorPage() {
           {questions.map((q, index) => (
             <div
               key={q.id}
-              className="bg-white dark:bg-gray-800 shadow-sm border border-gray-300 rounded-lg p-4 mb-4"
+              className="bg-white shadow-sm border border-gray-300 rounded-lg p-4 mb-4"
             >
               <h3 className="text-lg text-[#00A1A9] font-bold mb-2">Soal #{index + 1}</h3>
               <div className="flex justify-between items-center mb-3">
@@ -341,7 +341,7 @@ export default function EditorPage() {
               <ul className="list-none pl-3">
                 {q.options.map((opt, index) => (
                   <li key={opt.id} className="flex items-center mb-2">
-                    <div className="mr-4 text-gray-700 dark:text-gray-300">
+                    <div className="mr-4 text-gray-700">
                       {huruf(index)}
                     </div>
                     <div className="flex-grow-1 mr-2">
@@ -372,14 +372,14 @@ export default function EditorPage() {
                   </span>
                   <label
                     htmlFor={`${q.id}`}
-                    className="text-gray-700 dark:text-gray-300"
+                    className="text-gray-700"
                   >
                     Kunci jawaban:
                   </label>
                   <select
                     id={`${q.id}`}
                     value={isRight[q.id]}
-                    className="form-select w-1/4 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="form-select w-1/4 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     onChange={(e) =>
                       handleSetIsRight(e.target.id, e.target.value)
                     }

@@ -47,14 +47,14 @@ export default function EditableText({
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onBlur={handleBlur}
-      className={`w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-md dark:bg-gray-700 dark:text-white ${className}`}
+      className={`w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-md ${className}`}
       style={{ minHeight: '100px' }} // Tambahkan tinggi minimal
     />
   ) : (
     // 5. Tambahkan 'whitespace-pre-wrap' dan tampilkan 'value'
     <div
       onClick={handleClick}
-      className={`cursor-pointer border-b border-gray-300 dark:border-gray-600 py-1 ${className} whitespace-pre-wrap`}
+      className={`cursor-pointer border-b border-gray-300 py-1 ${className} whitespace-pre-wrap`}
       style={{ minHeight: '1.5em' }} // Beri tinggi minimal agar mudah diklik
     >
       {value || "Text harus diisi"}

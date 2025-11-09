@@ -82,18 +82,18 @@ const ProjectPage: React.FC = () => {
           {projects.map((p) => (
             <div
               key={p.public_id}
-              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+              className="relative bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
             >
               {/* Card Header with Project Type Badge */}
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
+                  <h3 className="text-xl font-bold text-gray-900 line-clamp-1">
                     {p.nama_ujian}
                   </h3>
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={() => deleteProject(p.public_id)}
-                      className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"
+                      className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                       >
                       <TrashIcon className="h-5 w-5" />
                     </button>
@@ -105,31 +105,31 @@ const ProjectPage: React.FC = () => {
               <div className="px-6 py-4 space-y-3">
                 <div className="space-y-2">
                   {p.mata_pelajaran && (
-                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                    <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Mata Pelajaran</p>
                       <span>{p.mata_pelajaran}</span>
                     </div>
                   )}
                   {p.kelas && (
-                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                    <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Kelas</p>
                       <span>{p.kelas}</span>
                     </div>
                   )}
                   {p.semester && (
-                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                    <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Semester</p>
                       <span>{p.semester}</span>
                     </div>
                   )}
                   {p.capaian_pembelajaran && (
-                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                    <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Capaian Pembelajaran</p>
                       <span>{p.capaian_pembelajaran}</span>
                     </div>
                   )}
                   {p.indikator_ketercapaian_pembelajaran && (
-                    <div className="flex flex-col text-gray-700 dark:text-gray-300">
+                    <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Indikator Ketercapaian Pembelajaran</p>
                       <span>{p.indikator_ketercapaian_pembelajaran}</span>
                     </div>
@@ -138,7 +138,7 @@ const ProjectPage: React.FC = () => {
               </div>
 
               {/* Card Footer with Actions */}
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                 <div className="flex gap-3 justify-between">
                   <button
                     className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"

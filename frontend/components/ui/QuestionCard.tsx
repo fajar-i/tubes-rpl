@@ -9,7 +9,7 @@ interface QuestionCardProps {
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults, index }) => {
   return (
-    <div className="question-card bg-white dark:bg-gray-800 shadow-sm border border-gray-200 rounded-lg p-4 mb-4">
+    <div className="question-card bg-white shadow-sm border border-gray-200 rounded-lg p-4 mb-4">
       <h3 className="text-lg text-[#00A1A9] font-bold mb-2">Soal #{index + 1}</h3>
       <div className="flex flex-col mb-3">
         <div className="p-2">
@@ -22,7 +22,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults, 
       <ul className="list-none pl-3">
         {question.options.map((opt) => (
           <li key={opt.id} className="flex items-center mb-2">
-            <div className="mr-4 text-gray-700 dark:text-gray-300">{opt.option_code}</div>
+            <div className="mr-4 text-gray-700">{opt.option_code}</div>
             <div className="text-base max-w-md text-justify">
               {opt.text}
               {opt.is_right ? (
