@@ -394,7 +394,7 @@ export default function Jawaban() {
             </button>
             <button
               onClick={() => spreadsheetRef.current?.[0]?.insertRow()}
-              className="px-4 py-2 bg-blue-600 text-white hover:bg-gray-200 rounded-md text-sm font-medium"
+              className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-sm font-medium cursor-pointer"
             >
               Tambah peserta
             </button>
