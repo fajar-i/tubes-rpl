@@ -31,31 +31,12 @@ class MaterialController extends Controller
     public function store(Request $request, Project $project)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,txt,docx',
+            'content' => 'required|string',
         ]);
 
-        $file = $request->file('file');
-        $path = $file->store('materials', 'public'); // disimpan ke storage/app/public/materials
-        $filePath = storage_path("app/public/{$path}");
-        $fileMime = $file->getMimeType();
-        $fileName = $file->getClientOriginalName();
-
-        // Upload ke Gemini
-        $fileUri = $this->gemini->uploadFile($filePath, $fileName, $fileMime);
-
-        if (!$fileUri) {
-            return response()->json([
-                "status" => false,
-                "message" => "Gagal mengupload file ke Gemini API"
-            ], 500);
-        }
-
-        $uri = "https://nonmucilaginous-superattainably-rosena.ngrok-free.dev";
-        // Simpan URL file lokal + URI Gemini di database
         $material = Material::create([
             'project_id' => $project->id,
-            'content' => $uri . "storage/{$path}", // URL publik untuk file
-            'gemini_file_uri' => $fileUri,
+            'content' => $request->content,
         ]);
 
         return response()->json([

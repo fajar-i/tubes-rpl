@@ -6,7 +6,7 @@ import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
-import { DocumentIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, DocumentIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { AIResultType, MaterialType } from "@/types";
 
 export default function AnalisisAIPage() {
@@ -16,10 +16,21 @@ export default function AnalisisAIPage() {
   const router = useRouter();
 
   const [loadingPage, setLoadingPage] = useState<boolean>(true);
+  const [appliedSuggestions, setAppliedSuggestions] = useState<{ [key: string]: boolean }>({});
+  const defaultScores = {
+    kesesuaian_tujuan: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
+    kesesuaian_indikator: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
+    kedalaman_kognitif: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
+    kejelasan_perumusan: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
+    kesesuaian_bentuk: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
+    kesesuaian_materi: { skor: 0, penjelasan: "Validasi gagal dilakukan" }
+  };
+
   const [questions, setQuestions] = useState<AIResultType[]>([]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState<boolean>(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<string>("");
+  const [currentMaterial, setCurrentMaterial] = useState<MaterialType | null>(null);
   const [materials, setMaterials] = useState<MaterialType[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState<boolean>(true);
 
@@ -75,14 +86,23 @@ export default function AnalisisAIPage() {
         await Promise.all(updateOptionPromises.filter((p) => p !== null));
       }
 
-      // Update local state with the modified question while preserving other questions and keeping suggestion panel open
+      // Update local state with the modified question while preserving other questions and their suggestion states
       setQuestions(
-        questions.map((q) => (q.id === question.id ? updatedQuestion : q))
+        questions.map((q) => 
+          q.id === question.id 
+            ? { ...updatedQuestion, showSuggestion: false }
+            : { ...q } // Keep existing suggestion state for other questions
+        )
       );
 
-      // Keep suggestion panel open
-      setSuggestion("completed");
+      // Mark this question's suggestion as applied
+      setAppliedSuggestions(prev => ({
+        ...prev,
+        [question.id]: true
+      }));
 
+      // Keep suggestion panel open for other questions
+      setSuggestion("completed");
       toast.success("Saran berhasil diterapkan");
     } catch (err) {
       console.error("Gagal menerapkan saran:", err);
@@ -90,7 +110,7 @@ export default function AnalisisAIPage() {
     }
   };
 
-  const fetchMaterials = async () => {
+  const fetchMaterials = React.useCallback(async () => {
     setLoadingMaterials(true);
     try {
       const resp = await AxiosInstance.get(`/projects/${projectId}/materials`, {
@@ -103,7 +123,7 @@ export default function AnalisisAIPage() {
     } finally {
       setLoadingMaterials(false);
     }
-  };
+  }, [authToken, projectId]);
 
   const deleteMaterial = async (materialId: number) => {
     try {
@@ -145,26 +165,21 @@ export default function AnalisisAIPage() {
 
     fetchQuestions();
     fetchMaterials();
-  }, [authToken, projectId, router]);
+  }, [authToken, projectId, router, fetchMaterials]);
 
-  const handleFileUpload = async (file: File) => {
-    if (!authToken || !questions.length) return;
+  const handleMaterialSubmit = async () => {
+    if (!authToken || !questions.length || !selectedMaterial) return;
 
-    setSelectedFile(file);
     setLoadingSuggestion(true);
 
     try {
       // First upload the material
-      const formData = new FormData();
-      formData.append("file", file);
-
       const materialRes = await AxiosInstance.post(
         `/projects/${projectId}/materials`,
-        formData,
+        { content: selectedMaterial },
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
-            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -288,7 +303,85 @@ export default function AnalisisAIPage() {
       console.error("Gagal menganalisis dengan materi:", err);
       toast.error("Gagal menganalisis dengan materi ajar");
       setSuggestion(null);
-      setSelectedFile(null);
+      setSelectedMaterial("");
+    } finally {
+      setLoadingSuggestion(false);
+    }
+  };
+
+  const handleMaterialAnalysis = async (material: MaterialType) => {
+    setCurrentMaterial(material);
+    setLoadingSuggestion(true);
+
+    try {
+      // Then validate each question with the material
+      const validationPromises = questions.map(async (question) => {
+      try {
+        const response = await AxiosInstance.post(
+          `/question/${question.id}/validate`,
+          null,
+          {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        );
+
+        const validationData = response.data.data;
+        return {
+          data: {
+            status: true,
+            question: {
+              ...question,
+              id: question.id,
+              text: question.text,
+              options: question.options,
+              kesimpulan_validitas: validationData.kesimpulan_validitas || "Tidak Valid",
+              skor: validationData.skor || defaultScores,
+              rata_rata_skor: validationData.rata_rata_skor || 0,
+              note: validationData.note || null,
+              bloom_taxonomy: validationData.bloom_taxonomy || null,
+              ai_suggestion_question: validationData.ai_suggestion_question || null,
+              ai_suggestion_options: validationData.ai_suggestion_options || [],
+              showSuggestion: false,
+            },
+          },
+        };
+      } catch (error) {
+        console.error(`Error validating question ${question.id}:`, error);
+        return {
+          data: {
+            status: false,
+            question: {
+              ...question,
+              id: question.id,
+              is_valid: false,
+              note: "Validasi gagal dilakukan",
+              text: question.text,
+              skor: defaultScores,
+              kesimpulan_validitas: "Tidak Valid" as const,
+              rata_rata_skor: 0,
+              bloom_taxonomy: null,
+              ai_suggestion_question: null,
+              ai_suggestion_options: [],
+              showSuggestion: false,
+            },
+          },
+        };
+      }
+    });
+
+    const validationResults = await Promise.all(validationPromises);
+    const updatedQuestions = validationResults.map((res) => ({
+      ...res.data.question,
+      id: res.data.question.id,
+      showSuggestion: false,
+    }));
+
+    setQuestions(updatedQuestions);
+    setSuggestion("completed");
+    toast.success("Analisis ulang berhasil dilakukan");
+    } catch (err) {
+      console.error("Gagal menganalisis:", err);
+      toast.error("Gagal menganalisis ulang dengan materi");
     } finally {
       setLoadingSuggestion(false);
     }
@@ -300,42 +393,36 @@ export default function AnalisisAIPage() {
     <div className="flex justify-center">
       <div className="w-full max-w-3xl">
         <div className="mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-medium mb-4">Materi Ajar</h3>
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium mb-4">Materi Ajar</h3>
 
-            <div className="flex gap-4 items-center mb-4">
-              <input
-                type="file"
-                onChange={(e) =>
-                  e.target.files?.[0] && handleFileUpload(e.target.files[0])
-                }
-                accept=".pdf,.doc,.docx"
-                className="hidden"
-                id="fileInput"
-                disabled={loadingSuggestion || !questions.length}
-              />
-              <label
-                htmlFor="fileInput"
-                className={`flex items-center px-4 py-2 rounded-md text-base font-medium text-white 
-                  ${
-                    questions.length === 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : loadingSuggestion
-                      ? "bg-yellow-400 cursor-wait"
-                      : "bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
-                  }`}
-              >
-                <DocumentIcon className="h-6 w-6 mr-3" />
-                {loadingSuggestion ? "Menganalisis..." : "Unggah Materi Baru"}
-              </label>
-              {selectedFile && (
-                <span className="text-sm text-gray-600">
-                  File: {selectedFile.name}
-                </span>
-              )}
-            </div>
-
-            {/* Material List */}
+              <div className="space-y-4 mb-4">
+                <textarea
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  rows={4}
+                  placeholder="Masukkan materi pembelajaran yang berkaitan dengan soal..."
+                  value={selectedMaterial}
+                  onChange={(e) => setSelectedMaterial(e.target.value)}
+                  disabled={loadingSuggestion}
+                />
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleMaterialSubmit}
+                    className={`flex items-center px-4 py-2 rounded-md text-base font-medium text-white 
+                      ${
+                        questions.length === 0 || !selectedMaterial
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : loadingSuggestion
+                          ? "bg-yellow-400 cursor-wait"
+                          : "bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
+                      }`}
+                    disabled={questions.length === 0 || !selectedMaterial || loadingSuggestion}
+                  >
+                    <DocumentIcon className="h-6 w-6 mr-3" />
+                    {loadingSuggestion ? "Menganalisis..." : "Simpan & Analisis"}
+                  </button>
+                </div>
+              </div>            {/* Material List */}
             {loadingMaterials ? (
               <div className="flex justify-center py-4">
                 <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-transparent rounded-full"></div>
@@ -345,160 +432,32 @@ export default function AnalisisAIPage() {
                 {materials.map((material) => (
                   <div
                     key={material.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                    className={`flex items-center justify-between p-3 rounded-md ${
+                      currentMaterial?.id === material.id ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <DocumentIcon className="h-5 w-5 text-gray-500" />
-                      <a
-                        href={material.content}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline truncate max-w-[300px]"
-                      >
-                        {material.content.split("/").pop()}
-                      </a>
+                    <div className="flex-1 mr-4">
+                      <div className="font-medium text-gray-700 mb-1">Materi {material.id}</div>
+                      <div className="text-sm text-gray-600 line-clamp-2">{material.content}</div>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={async () => {
-                          setSuggestion(null);
-                          setSelectedFile(null);
-                          setLoadingSuggestion(true);
-
-                          try {
-                            // Validate each question with this material
-                            const validationPromises = questions.map(
-                              async (question) => {
-                                try {
-                                  const response = await AxiosInstance.post(
-                                    `/question/${question.id}/validate`,
-                                    null,
-                                    {
-                                      headers: {
-                                        Authorization: `Bearer ${authToken}`,
-                                      },
-                                    }
-                                  );
-                                  const validatedData = response.data.data; // Access the data property
-
-                                  return {
-                                    data: {
-                                      status: true,
-                                      question: {
-                                        ...question,
-                                        id: question.id,
-                                        kesimpulan_validitas:
-                                          validatedData.kesimpulan_validitas,
-                                        skor: validatedData.skor,
-                                        rata_rata_skor:
-                                          validatedData.rata_rata_skor,
-                                        note: validatedData.note,
-                                        bloom_taxonomy:
-                                          validatedData.bloom_taxonomy,
-                                        ai_suggestion_question:
-                                          validatedData.ai_suggestion_question,
-                                        ai_suggestion_options:
-                                          validatedData.ai_suggestion_options,
-                                        showSuggestion: false,
-                                      },
-                                    },
-                                  };
-                                } catch (error) {
-                                  console.log(
-                                    "Gagal melakukan validasi",
-                                    error
-                                  );
-                                  return {
-                                    data: {
-                                      status: false,
-                                      question: {
-                                        ...question, // Keep existing question data
-                                        id: question.id,
-                                        is_valid: false,
-                                        text: question.text,
-                                        skor: {
-                                          kesesuaian_tujuan: {
-                                            skor: 0,
-                                            penjelasan:
-                                              "Validasi gagal dilakukan",
-                                          },
-                                          kesesuaian_indikator: {
-                                            skor: 0,
-                                            penjelasan:
-                                              "Validasi gagal dilakukan",
-                                          },
-                                          kedalaman_kognitif: {
-                                            skor: 0,
-                                            penjelasan:
-                                              "Validasi gagal dilakukan",
-                                          },
-                                          kejelasan_perumusan: {
-                                            skor: 0,
-                                            penjelasan:
-                                              "Validasi gagal dilakukan",
-                                          },
-                                          kesesuaian_bentuk: {
-                                            skor: 0,
-                                            penjelasan:
-                                              "Validasi gagal dilakukan",
-                                          },
-                                          kesesuaian_materi: {
-                                            skor: 0,
-                                            penjelasan:
-                                              "Validasi gagal dilakukan",
-                                          },
-                                        },
-                                        kesimpulan_validitas: "Tidak Valid" as const,
-                                        rata_rata_skor: 0,
-                                        note: "Validasi gagal dilakukan",
-                                        bloom_taxonomy: null,
-                                        ai_suggestion_question: null,
-                                        ai_suggestion_options: [],
-                                        showSuggestion: false,
-                                      },
-                                    },
-                                  };
-                                }
-                              }
-                            );
-
-                            const validationResults = await Promise.all(
-                              validationPromises
-                            );
-
-                            // Ensure each question has a unique ID and proper structure
-                            const updatedQuestions = validationResults.map(
-                              (res) => {
-                                const question = res.data.question;
-                                return {
-                                  ...question,
-                                  id: question.id, // Ensure ID is preserved
-                                  showSuggestion: false,
-                                };
-                              }
-                            );
-                            setQuestions(updatedQuestions);
-                            setSuggestion("completed");
-                            toast.success(
-                              "Analisis dengan materi berhasil dilakukan"
-                            );
-                          } catch (err) {
-                            console.error("Gagal menganalisis:", err);
-                            toast.error("Gagal menganalisis dengan materi");
-                          } finally {
-                            setLoadingSuggestion(false);
-                          }
-                        }}
-                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                        onClick={() => handleMaterialAnalysis(material)}
+                        className={`p-2 transition-colors ${
+                          currentMaterial?.id === material.id
+                            ? 'text-blue-600 hover:bg-blue-50'
+                            : 'text-gray-400'
+                        }`}
                         disabled={loadingSuggestion}
                       >
-                        Analisis Ulang
+                        <ArrowPathIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => deleteMaterial(material.id)}
-                        className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        disabled={loadingSuggestion}
                       >
-                        Hapus
+                        <TrashIcon className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
@@ -506,28 +465,28 @@ export default function AnalisisAIPage() {
               </div>
             ) : (
               <p className="text-sm text-gray-500 text-center py-4">
-                Belum ada materi ajar. Silakan unggah materi untuk menganalisis
+                Belum ada materi ajar. Silakan masukkan materi untuk menganalisis
                 soal.
               </p>
             )}
 
-            <p className="text-xs text-gray-500 mt-4">
-              Format yang didukung: PDF, DOC, DOCX
-            </p>
             {questions.length === 0 && (
-              <p className="text-xs text-red-500 mt-2">
+              <p className="text-xs text-red-500 mt-4">
                 Tambahkan soal terlebih dahulu sebelum melakukan analisis
               </p>
             )}
+            <p className="text-xs text-gray-500 mt-2">
+              Masukkan materi pembelajaran yang berkaitan dengan soal untuk menganalisis kesesuaian soal dengan materi
+            </p>
           </div>
-        </div>
 
-        {loadingSuggestion && (
-          <div className="mb-6 flex justify-center items-center gap-2 p-4 bg-blue-50 rounded-lg">
-            <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-            <span className="text-blue-600">Menganalisis materi...</span>
-          </div>
-        )}
+          {loadingSuggestion && (
+            <div className="mb-6 flex justify-center items-center gap-2 p-4 bg-blue-50 rounded-lg">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              <span className="text-blue-600">Menganalisis materi...</span>
+            </div>
+          )}
+        </div>
 
         <div className="space-y-6">
           {questions.map((q, index) => (
@@ -535,23 +494,6 @@ export default function AnalisisAIPage() {
               key={q.id}
               className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden"
             >
-              {suggestion && (
-                <button
-                  onClick={() => {
-                    setQuestions(
-                      questions.map((question) =>
-                        question.id === q.id
-                          ? { ...question, showSuggestion: false }
-                          : question
-                      )
-                    );
-                    setSuggestion(null);
-                  }}
-                  className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                >
-                  Tutup Saran
-                </button>
-              )}
               <div
                 className={`grid grid-cols-${
                   !suggestion ? 1 : 2
@@ -582,12 +524,12 @@ export default function AnalisisAIPage() {
                   )}
                 </div>
                 {/* Analysis Section */}
-                {suggestion && (
+                {(suggestion === "completed" && !appliedSuggestions[q.id]) && (
                   <div className="p-4 bg-gray-50">
                     <div className="flex justify-between items-start mb-4">
                       <h4 className="text-lg font-medium">Hasil Analisis</h4>
                       <div>
-                        {q.ai_suggestion_question && !q.showSuggestion && (
+                        {q.ai_suggestion_question && !q.showSuggestion && !appliedSuggestions[q.id] && (
                           <button
                             onClick={() => {
                               setQuestions(
@@ -603,8 +545,27 @@ export default function AnalisisAIPage() {
                             Lihat Saran
                           </button>
                         )}
-                        {q.showSuggestion && q.ai_suggestion_question && (
+                        {appliedSuggestions[q.id] && (
+                          <span className="text-xs text-green-600">
+                            ✓ Saran diterapkan
+                          </span>
+                        )}
+                        {q.showSuggestion && q.ai_suggestion_question && !appliedSuggestions[q.id] && (
                           <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setQuestions(
+                                  questions.map((question) =>
+                                    question.id === q.id
+                                      ? { ...question, showSuggestion: false }
+                                      : question
+                                  )
+                                );
+                            }}
+                            className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                          >
+                            Tutup Saran
+                          </button>
                             <button
                               onClick={() => applySuggestions(q)}
                               className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
