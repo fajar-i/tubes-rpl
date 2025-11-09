@@ -317,10 +317,9 @@ export default function AnalisisAIPage() {
               <label
                 htmlFor="fileInput"
                 className={`flex items-center px-4 py-2 rounded-md text-base font-medium text-white 
-                  ${
-                    questions.length === 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : loadingSuggestion
+                  ${questions.length === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : loadingSuggestion
                       ? "bg-yellow-400 cursor-wait"
                       : "bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
                   }`}
@@ -553,9 +552,8 @@ export default function AnalisisAIPage() {
                 </button>
               )}
               <div
-                className={`grid grid-cols-${
-                  !suggestion ? 1 : 2
-                } divide-x divide-gray-200`}
+                className={`grid grid-cols-${!suggestion ? 1 : 2
+                  } divide-x divide-gray-200`}
               >
                 {/* Question Section */}
                 <div className="p-4">
@@ -623,13 +621,12 @@ export default function AnalisisAIPage() {
                           Status Validitas:
                         </span>
                         <p
-                          className={`text-sm mt-1 font-medium ${
-                            q.kesimpulan_validitas === "Valid"
+                          className={`text-sm mt-1 font-medium ${q.kesimpulan_validitas === "Valid"
                               ? "text-green-600"
                               : q.kesimpulan_validitas === "Sebagian Valid"
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                          }`}
+                                ? "text-yellow-600"
+                                : "text-red-600"
+                            }`}
                         >
                           {q.kesimpulan_validitas}
                         </p>

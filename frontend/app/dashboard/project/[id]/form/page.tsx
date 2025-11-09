@@ -39,10 +39,10 @@ export default function EditorPage() {
       console.log("fetch all questions error : " + error);
     }
   };
-  
+
   useEffect(() => {
     setLoading(true);
-    
+
     fetchAllQuestions().finally(() => {
       setLoading(false);
     });
@@ -91,7 +91,7 @@ export default function EditorPage() {
 
       const responses = await Promise.all(promises);
       const addedQuestions = responses.map(response => response.data.questions);
-      
+
       setQuestions(prev => [...prev, ...addedQuestions]);
       toast.success(`${count} soal baru ditambahkan`);
     } catch (error) {
@@ -99,7 +99,7 @@ export default function EditorPage() {
       toast.error("Gagal menambahkan soal");
     }
   };
-  
+
   const handleQuestionBlur = async (qId: number, newText: string) => {
     if (!newText) {
       newText = "Text harus diisi";
@@ -138,11 +138,11 @@ export default function EditorPage() {
       prev.map((q) =>
         q.id === qId
           ? {
-              ...q,
-              options: q.options.map((o) =>
-                o.id === oId ? { ...o, text: newText } : o
-              ),
-            }
+            ...q,
+            options: q.options.map((o) =>
+              o.id === oId ? { ...o, text: newText } : o
+            ),
+          }
           : q
       )
     );
@@ -178,12 +178,12 @@ export default function EditorPage() {
       prevQuestions.map((q) =>
         q.id === parsedQId
           ? {
-              ...q,
-              options: q.options.map((opt) => ({
-                ...opt,
-                is_right: opt.id === parsedOId,
-              })),
-            }
+            ...q,
+            options: q.options.map((opt) => ({
+              ...opt,
+              is_right: opt.id === parsedOId,
+            })),
+          }
           : q
       )
     );
@@ -222,16 +222,16 @@ export default function EditorPage() {
         prevQuestions.map((q) =>
           q.id === parsedQId
             ? {
-                ...q,
-                options: q.options.map((opt) => ({
-                  ...opt,
-                  is_right:
-                    opt.id ===
-                    (questions
-                      .find((q) => q.id === parsedQId)
-                      ?.options.find((o) => o.is_right)?.id || false),
-                })),
-              }
+              ...q,
+              options: q.options.map((opt) => ({
+                ...opt,
+                is_right:
+                  opt.id ===
+                  (questions
+                    .find((q) => q.id === parsedQId)
+                    ?.options.find((o) => o.is_right)?.id || false),
+              })),
+            }
             : q
         )
       );
@@ -245,9 +245,9 @@ export default function EditorPage() {
       prev.map((q) =>
         q.id === qId
           ? {
-              ...q,
-              options: [...q.options, { id: tempId, text: "Pilihan baru" }],
-            }
+            ...q,
+            options: [...q.options, { id: tempId, text: "Pilihan baru" }],
+          }
           : q
       )
     );
@@ -270,11 +270,11 @@ export default function EditorPage() {
         prev.map((q) =>
           q.id === qId
             ? {
-                ...q,
-                options: q.options.map((o) =>
-                  o.id === tempId ? { id: created.id, text: created.text } : o
-                ),
-              }
+              ...q,
+              options: q.options.map((o) =>
+                o.id === tempId ? { id: created.id, text: created.text } : o
+              ),
+            }
             : q
         )
       );
@@ -288,8 +288,8 @@ export default function EditorPage() {
 
   const handleDelete = async (id: number, type: string) => {
     Swal.fire({
-      title: `Hapus ${type === "questions" ? "Soal": "Opsi"}?`,
-      text: `Anda tidak bisa mengembalikan ${type === "questions" ? "Soal": "Opsi"} jika dihapus!`,
+      title: `Hapus ${type === "questions" ? "Soal" : "Opsi"}?`,
+      text: `Anda tidak bisa mengembalikan ${type === "questions" ? "Soal" : "Opsi"} jika dihapus!`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -305,7 +305,7 @@ export default function EditorPage() {
             },
           });
           if (response.data.status) {
-            toast.success(`${type === "questions" ? "Soal": "Opsi"} berhasil dihapus!`);
+            toast.success(`${type === "questions" ? "Soal" : "Opsi"} berhasil dihapus!`);
             fetchAllQuestions();
           }
         } catch (error) {
@@ -334,7 +334,7 @@ export default function EditorPage() {
                   <EditableText
                     text={q.text}
                     onBlur={(newText) => handleQuestionBlur(q.id, newText)}
-                    className="text-lg font-semibold"
+                    className="text-lg font-semibold whitespace-pre-wrap"
                   />
                 </div>
               </div>
@@ -350,7 +350,7 @@ export default function EditorPage() {
                         onBlur={(newText) =>
                           handleOptionBlur(q.id, opt.id, newText)
                         }
-                        className="text-base max-w-lg text-justify"
+                        className="text-base max-w-lg text-justify whitespace-pre-wrap"
                       />
                     </div>
                     <button

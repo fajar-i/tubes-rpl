@@ -1,19 +1,7 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme {
   --font-istok: var(--font-istok_web), sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 html,
@@ -22,11 +10,6 @@ body {
   scroll-behavior: smooth;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
 /* Target kolom <col> pertama di dalam colgroup */
 .jss_worksheet > colgroup > col:first-child {
   width: 150px !important; /* Ganti 150px dengan lebar yang Anda mau */

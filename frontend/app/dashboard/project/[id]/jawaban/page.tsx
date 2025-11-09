@@ -392,6 +392,12 @@ export default function Jawaban() {
             >
               Redo
             </button>
+            <button
+              onClick={() => spreadsheetRef.current?.[0]?.insertRow()}
+              className="px-4 py-2 bg-blue-600 text-white hover:bg-gray-200 rounded-md text-sm font-medium"
+            >
+              Tambah peserta
+            </button>
           </div>
         </div>
 
