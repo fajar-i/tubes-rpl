@@ -72,7 +72,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                     nama_ujian: e.target.value,
                   })
                 }
-                placeholder="Masukkan nama ujian"
+                placeholder="Masukkan nama ujian (Contoh : UAS/UTS/Harian/Formatif/Sumatif)"
                 required
               />
               {!editedProject.nama_ujian && (
@@ -109,7 +109,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                 htmlFor="kelas"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Kelas
+                Kelas dan jenjang
               </label>
               <input
                 type="text"
@@ -119,7 +119,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                 onChange={(e) =>
                   setEditedProject({ ...editedProject, kelas: e.target.value })
                 }
-                placeholder="Masukkan kelas"
+                placeholder="Masukkan kelas (Contoh: 1 SD)"
               />
             </div>
 
@@ -162,7 +162,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                     capaian_pembelajaran: e.target.value 
                   })
                 }
-                placeholder="Masukkan capaian pembelajaran"
+                placeholder="Masukkan capaian pembelajaran (Contoh: Pada akhir fase A, siswa mampu menyelesaikan operasi aritmatika dasar)"
               />
             </div>
 
@@ -183,7 +183,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                     indikator_ketercapaian_pembelajaran: e.target.value 
                   })
                 }
-                placeholder="Masukkan indikator ketercapaian pembelajaran&#10;Gunakan baris baru untuk setiap indikator"
+                placeholder="Masukkan indikator ketercapaian pembelajaran (Contoh: Siswa mampu melakukan penjumlahan, Siswa mampu melakukan pengurangan, dst)&#10;Gunakan baris baru untuk setiap indikator"
                 rows={5}
                 style={{ whiteSpace: 'pre-wrap' }}
               />
