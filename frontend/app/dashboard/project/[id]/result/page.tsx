@@ -49,14 +49,19 @@ export default function ResultPage() {
         setQuestions(questionsResponse.data.questions);
         setAnalysisResults(analysisResponse.data.analisis);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Gagal memuat data. Silakan coba lagi.");
-      } finally {
-        setLoading(false);
-      }
+        // Only log the error, don't show toast for auth-related errors
+        if (authToken === null) {
+          console.log("Auth error:", error);
+        } else {
+          console.error("Error fetching data:", error);
+          toast.error("Gagal memuat data. Silakan coba lagi.");
+        }
+      } 
     };
 
-    fetchData();
+    fetchData().finally(() => {
+      setLoading(false);
+    });
   }, [authToken, params.id, router]);
 
   if (loading) {

@@ -85,14 +85,19 @@ export default function JawabanPage() {
           );
         }
       } catch (error) {
-        console.error("Gagal mengambil data awal:", error);
-        toast.error("Gagal memuat data. Mohon coba lagi.");
-      } finally {
-        setLoading(false);
-      }
+        // Only show error toast for non-auth errors
+        if (authToken === null) {
+          console.log("Auth error:", error);
+        } else {
+          console.error("Gagal mengambil data awal:", error);
+          toast.error("Gagal memuat data. Mohon coba lagi.");
+        }
+      } 
     };
 
-    fetchData();
+    fetchData().finally(() => {
+      setLoading(false);
+    });
   }, [authToken, params.id, router]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,8 +121,6 @@ export default function JawabanPage() {
         const rawData = XLSX.utils.sheet_to_json(worksheet, { 
           header: Array.from({ length: questions.length }, (_, i) => `Soal ${i + 1}`)
         });
-        
-        console.log("Raw data from Excel:", rawData);
         
         if (!Array.isArray(rawData) || rawData.length === 0) {
           toast.error('File Excel kosong atau tidak valid');
@@ -170,7 +173,6 @@ export default function JawabanPage() {
         setTimeout(() => {
           if (spreadsheetRef.current?.[0]) {
             spreadsheetRef.current[0].setData(parsedData);
-            console.log("Spreadsheet data updated");
           }
         }, 100);
         
