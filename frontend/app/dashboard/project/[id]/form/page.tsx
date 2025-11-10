@@ -10,8 +10,10 @@ import { AxiosInstance } from "@/lib/axios";
 import { OptionForm, QuestionForm } from "@/types";
 import EditableText from "@/components/ui/EditableText";
 import QuestionsAddModal from "@/components/ui/modal/QuestionsAddModal";
+import useTitle from "@/hooks/useTitle";
 
-export default function EditorPage() {
+export default function FormPage() {
+  useTitle("Analis - Form Soal", "Form soal Analis");
   const router = useRouter();
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,12 @@ export default function EditorPage() {
       );
       setQuestions(response.data.questions);
     } catch (error) {
-      console.log("fetch all questions error : " + error);
+      if (authToken === null) {
+        console.log("Auth error:", error);
+      } else {
+        console.error("Gagal mengambil data awal:", error);
+        toast.error("Gagal memuat data. Mohon coba lagi.");
+      }
     }
   };
 
@@ -76,23 +83,21 @@ export default function EditorPage() {
     }
 
     try {
-      const promises = newQuestions.map(question =>
-        AxiosInstance.post(
-          `/projects/${params.id}/questions/`,
-          question,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        )
+      const promises = newQuestions.map((question) =>
+        AxiosInstance.post(`/projects/${params.id}/questions/`, question, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
       );
 
       const responses = await Promise.all(promises);
-      const addedQuestions = responses.map(response => response.data.questions);
+      const addedQuestions = responses.map(
+        (response) => response.data.questions
+      );
 
-      setQuestions(prev => [...prev, ...addedQuestions]);
+      setQuestions((prev) => [...prev, ...addedQuestions]);
       toast.success(`${count} soal baru ditambahkan`);
     } catch (error) {
       console.error(error);
@@ -138,11 +143,11 @@ export default function EditorPage() {
       prev.map((q) =>
         q.id === qId
           ? {
-            ...q,
-            options: q.options.map((o) =>
-              o.id === oId ? { ...o, text: newText } : o
-            ),
-          }
+              ...q,
+              options: q.options.map((o) =>
+                o.id === oId ? { ...o, text: newText } : o
+              ),
+            }
           : q
       )
     );
@@ -178,12 +183,12 @@ export default function EditorPage() {
       prevQuestions.map((q) =>
         q.id === parsedQId
           ? {
-            ...q,
-            options: q.options.map((opt) => ({
-              ...opt,
-              is_right: opt.id === parsedOId,
-            })),
-          }
+              ...q,
+              options: q.options.map((opt) => ({
+                ...opt,
+                is_right: opt.id === parsedOId,
+              })),
+            }
           : q
       )
     );
@@ -222,16 +227,16 @@ export default function EditorPage() {
         prevQuestions.map((q) =>
           q.id === parsedQId
             ? {
-              ...q,
-              options: q.options.map((opt) => ({
-                ...opt,
-                is_right:
-                  opt.id ===
-                  (questions
-                    .find((q) => q.id === parsedQId)
-                    ?.options.find((o) => o.is_right)?.id || false),
-              })),
-            }
+                ...q,
+                options: q.options.map((opt) => ({
+                  ...opt,
+                  is_right:
+                    opt.id ===
+                    (questions
+                      .find((q) => q.id === parsedQId)
+                      ?.options.find((o) => o.is_right)?.id || false),
+                })),
+              }
             : q
         )
       );
@@ -245,9 +250,9 @@ export default function EditorPage() {
       prev.map((q) =>
         q.id === qId
           ? {
-            ...q,
-            options: [...q.options, { id: tempId, text: "Pilihan baru" }],
-          }
+              ...q,
+              options: [...q.options, { id: tempId, text: "Pilihan baru" }],
+            }
           : q
       )
     );
@@ -270,11 +275,11 @@ export default function EditorPage() {
         prev.map((q) =>
           q.id === qId
             ? {
-              ...q,
-              options: q.options.map((o) =>
-                o.id === tempId ? { id: created.id, text: created.text } : o
-              ),
-            }
+                ...q,
+                options: q.options.map((o) =>
+                  o.id === tempId ? { id: created.id, text: created.text } : o
+                ),
+              }
             : q
         )
       );
@@ -289,13 +294,15 @@ export default function EditorPage() {
   const handleDelete = async (id: number, type: string) => {
     Swal.fire({
       title: `Hapus ${type === "questions" ? "Soal" : "Opsi"}?`,
-      text: `Anda tidak bisa mengembalikan ${type === "questions" ? "Soal" : "Opsi"} jika dihapus!`,
+      text: `Anda tidak bisa mengembalikan ${
+        type === "questions" ? "Soal" : "Opsi"
+      } jika dihapus!`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: 'Ya, hapus!',
-      cancelButtonText: 'Batal'
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
@@ -305,7 +312,9 @@ export default function EditorPage() {
             },
           });
           if (response.data.status) {
-            toast.success(`${type === "questions" ? "Soal" : "Opsi"} berhasil dihapus!`);
+            toast.success(
+              `${type === "questions" ? "Soal" : "Opsi"} berhasil dihapus!`
+            );
             fetchAllQuestions();
           }
         } catch (error) {
@@ -328,7 +337,9 @@ export default function EditorPage() {
               key={q.id}
               className="bg-white shadow-sm border border-gray-300 rounded-lg p-4 mb-4"
             >
-              <h3 className="text-lg text-[#00A1A9] font-bold mb-2">Soal #{index + 1}</h3>
+              <h3 className="text-lg text-[#00A1A9] font-bold mb-2">
+                Soal #{index + 1}
+              </h3>
               <div className="flex justify-between items-center mb-3">
                 <div className="flex-grow-1 me-2">
                   <EditableText
@@ -341,9 +352,7 @@ export default function EditorPage() {
               <ul className="list-none pl-3">
                 {q.options.map((opt, index) => (
                   <li key={opt.id} className="flex items-center mb-2">
-                    <div className="mr-4 text-gray-700">
-                      {huruf(index)}
-                    </div>
+                    <div className="mr-4 text-gray-700">{huruf(index)}</div>
                     <div className="flex-grow-1 mr-2">
                       <EditableText
                         text={opt.text}
@@ -370,10 +379,7 @@ export default function EditorPage() {
                     {" "}
                     + Tambah Pilihan
                   </span>
-                  <label
-                    htmlFor={`${q.id}`}
-                    className="text-gray-700"
-                  >
+                  <label htmlFor={`${q.id}`} className="text-gray-700">
                     Kunci jawaban:
                   </label>
                   <select

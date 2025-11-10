@@ -1,25 +1,19 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useMyAppHook } from "@/context/AppProvider";
-import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { ProjectProvider } from "@/context/ProjectContext";
+import useTitle from "@/hooks/useTitle";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const router = useRouter();
-  const { authToken, user } = useMyAppHook();
-
-  useEffect(() => {
-    if (!authToken) {
-      router.push("/auth");
-    }
-  }, [authToken, router]);
+  useTitle('Analis - Dashboard', 'Dashboard analis');
+  const { user } = useMyAppHook();
 
   return (
     <ProjectProvider>

@@ -13,8 +13,10 @@ import html2canvas from "html2canvas-pro";
 
 import QuestionCard from "@/components/ui/QuestionCard";
 import ReliabilityCard from "@/components/ui/ReliabilityCard";
+import useTitle from "@/hooks/useTitle";
 
-export default function EditorPage() {
+export default function ResultPage() {
+  useTitle('Analis - Hasil', 'Hasil dari Analis');
   const router = useRouter();
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function EditorPage() {
 
     const fetchData = async () => {
       try {
-        // Get questions and analysis results in parallel using Promise.all
+        // Get questions, analysis results, and project details in parallel
         const [questionsResponse, analysisResponse] = await Promise.all([
           AxiosInstance.get(`/projects/${params.id}/questions`, {
             headers: {
@@ -40,21 +42,26 @@ export default function EditorPage() {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
-          })
+          }),
         ]);
 
-        // Set both states
+        // Set all states
         setQuestions(questionsResponse.data.questions);
         setAnalysisResults(analysisResponse.data.analisis);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Gagal memuat data. Silakan coba lagi.");
-      } finally {
-        setLoading(false);
-      }
+        // Only log the error, don't show toast for auth-related errors
+        if (authToken === null) {
+          console.log("Auth error:", error);
+        } else {
+          console.error("Error fetching data:", error);
+          toast.error("Gagal memuat data. Silakan coba lagi.");
+        }
+      } 
     };
 
-    fetchData();
+    fetchData().finally(() => {
+      setLoading(false);
+    });
   }, [authToken, params.id, router]);
 
   if (loading) {
@@ -77,35 +84,50 @@ export default function EditorPage() {
     if (!contentRef.current) return;
 
     setExportLoading(true);
+    
     try {
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margins = { top: 35, bottom: 10, left: 10, right: 10 };
+      const margins = { top: 40, bottom: 10, left: 20, right: 20 }; // Increased margins
       const contentWidth = pdfWidth - margins.left - margins.right;
 
-      // Add title
+      // Add header with project details
+      pdf.setFont("helvetica", "bold");
       pdf.setFontSize(16);
-      pdf.text(`Hasil Analisis - ${Date.now()}`, pdfWidth / 2, 15, {
-        align: "center",
-      });
-      pdf.setFontSize(12);
-      pdf.text(new Date().toLocaleDateString("id-ID"), pdfWidth / 2, 25, {
-        align: "center",
-      });
+      pdf.text("Hasil Analisis Butir Soal", pdfWidth / 2, 20, { align: "center" });
+      
+      // Add project details
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
+      const details = [
+        `Tanggal: ${new Date().toLocaleDateString("id-ID")}`
+      ];
 
+      details.forEach((detail, index) => {
+        pdf.text(detail, margins.left, 35 + (index * 6));
+      });
+      
       let yOffset = margins.top;
 
       // Process each question card separately
-      const questionElements =
-        contentRef.current.querySelectorAll(".question-card");
+      const questionElements = Array.from(
+        contentRef.current.querySelectorAll(".question-card")
+      );
 
-      for (const element of Array.from(questionElements)) {
+      // Process cards one by one to ensure proper rendering
+      for (const element of questionElements) {
+        // Wait a bit before capturing each element
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const canvas = await html2canvas(element as HTMLElement, {
-          scale: 1.5,
+          scale: 1.5, // Increased scale for better quality
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff",
+          removeContainer: true,
+          allowTaint: false,
+          foreignObjectRendering: false
         });
 
         const imgHeight = (canvas.height * contentWidth) / canvas.width;
@@ -116,10 +138,13 @@ export default function EditorPage() {
           yOffset = margins.top;
         }
 
+        // Convert canvas to PNG for better quality
+        const imgData = canvas.toDataURL("image/png", 0.75);
+
         // Add the image to PDF
         pdf.addImage(
-          canvas.toDataURL("image/jpeg", 0.95),
-          "JPEG",
+          imgData,
+          "PNG",
           margins.left,
           yOffset,
           contentWidth,
@@ -133,11 +158,17 @@ export default function EditorPage() {
       const reliabilityElement =
         contentRef.current.querySelector(".reliability-card");
       if (reliabilityElement) {
+        // Wait a bit before capturing reliability card
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const canvas = await html2canvas(reliabilityElement as HTMLElement, {
           scale: 1.5,
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff",
+          removeContainer: true,
+          allowTaint: false,
+          foreignObjectRendering: false
         });
 
         const imgHeight = (canvas.height * contentWidth) / canvas.width;
@@ -148,9 +179,10 @@ export default function EditorPage() {
           yOffset = margins.top;
         }
 
+        // Add the reliability card with PNG format
         pdf.addImage(
-          canvas.toDataURL("image/jpeg", 0.95),
-          "JPEG",
+          canvas.toDataURL("image/png", 0.75),
+          "PNG",
           margins.left,
           yOffset,
           contentWidth,
@@ -158,7 +190,9 @@ export default function EditorPage() {
         );
       }
 
-      pdf.save(`hasil-analisis-${Date.now()}.pdf`);
+      // Generate filename from project details
+      const timestamp = new Date().toLocaleDateString("id-ID").replace(/\//g, '-');
+      pdf.save(`Hasil Analisis_${timestamp}.pdf`);
       toast.success("PDF berhasil diunduh");
     } catch (error) {
       console.error("Error exporting PDF:", error);
@@ -195,6 +229,7 @@ export default function EditorPage() {
               question={question}
               analysisResults={analysisResults}
               index={index}
+              pdfMode={exportLoading}
             />
           ))}
 
@@ -202,6 +237,7 @@ export default function EditorPage() {
             analysisResults?.reliabilitas_tes !== undefined && (
               <ReliabilityCard
                 reliabilityScore={analysisResults.reliabilitas_tes}
+                pdfMode={exportLoading}
               />
             )}
         </div>

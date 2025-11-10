@@ -8,8 +8,10 @@ import ProjectEditModal from "@/components/ui/modal/ProjectEditModal";
 import { useProjects } from "@/context/ProjectContext";
 import ProjectAddModal from "@/components/ui/modal/ProjectAddModal";
 import { EyeIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import useTitle from "@/hooks/useTitle";
 
 const ProjectPage: React.FC = () => {
+  useTitle('Analis - Proyek', 'Proyek analis');
   const router = useRouter();
   const { projects, loading, addProject, updateProject, deleteProject, fetchProjects } = useProjects();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -131,7 +133,7 @@ const ProjectPage: React.FC = () => {
                   {p.indikator_ketercapaian_pembelajaran && (
                     <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Indikator Ketercapaian Pembelajaran</p>
-                      <span>{p.indikator_ketercapaian_pembelajaran}</span>
+                      <span className="whitespace-pre-wrap">{p.indikator_ketercapaian_pembelajaran}</span>
                     </div>
                   )}
                 </div>
@@ -141,14 +143,14 @@ const ProjectPage: React.FC = () => {
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                 <div className="flex gap-3 justify-between">
                   <button
-                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 cursor-pointer flex items-center justify-center gap-2"
                     onClick={() => handleDetailProject(p)}
                   >
                     <EyeIcon className="h-4 w-4"/>
                     Lihat Detail
                   </button>
                   <button
-                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition-colors duration-200 flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition-colors duration-200 cursor-pointer flex items-center justify-center gap-2"
                     onClick={() => handleEditProject(p)}
                   >
                    <PencilSquareIcon className="h-4 w-4" />

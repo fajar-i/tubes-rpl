@@ -1,11 +1,14 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useMyAppHook } from "@/context/AppProvider";
 import { useRouter } from "next/navigation";
 import { RegisterData } from "@/types";
 import Navbar from "@/components/layout/Navbar";
+import useTitle from "@/hooks/useTitle";
 
 const Auth: React.FC = () => {
+    useTitle('Analis - Masuk', 'Registrasi user ke Analis')
     const router = useRouter();
     const [isLogin, setIsLogin] = useState<boolean>(true);
     const [formData, setFormData] = useState<RegisterData>({
@@ -17,8 +20,8 @@ const Auth: React.FC = () => {
     const { login, register, authToken, isLoading } = useMyAppHook();
     
     useEffect(() => {
-        if (authToken) {
-            router.push("/dashboard");
+        if (!isLoading && authToken) {
+            router.replace("/dashboard");
             return;
         }
     }, [router, authToken, isLoading]);
@@ -51,7 +54,7 @@ const Auth: React.FC = () => {
             <Navbar />
             <div className="flex items-center justify-center mt-14">
                 <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                    <h3 className="text-2xl font-bold text-center mb-6">{isLogin ? "Login" : "Register"}</h3>
+                    <h3 className="text-2xl font-bold text-center mb-6">{isLogin ? "Masuk" : "Daftar"}</h3>
                     <form onSubmit={handleFormSubmit}>
                         {!isLogin && (
                             <input
@@ -60,7 +63,7 @@ const Auth: React.FC = () => {
                                 type="text"
                                 value={formData.name}
                                 onChange={handleOnChangeInput}
-                                placeholder="Name"
+                                placeholder="Masukkan nama"
                                 required
                             />
                         )}
@@ -70,7 +73,7 @@ const Auth: React.FC = () => {
                             type="email"
                             value={formData.email}
                             onChange={handleOnChangeInput}
-                            placeholder="Email"
+                            placeholder="Masukkan email"
                             required
                         />
                         <input
@@ -79,7 +82,7 @@ const Auth: React.FC = () => {
                             type="password"
                             value={formData.password}
                             onChange={handleOnChangeInput}
-                            placeholder="Password"
+                            placeholder="Masukkan password"
                             required
                         />
                         {!isLogin && (
@@ -89,21 +92,21 @@ const Auth: React.FC = () => {
                                 type="password"
                                 value={formData.password_confirmation}
                                 onChange={handleOnChangeInput}
-                                placeholder="Confirm Password"
+                                placeholder="Konfirmasi password"
                                 required
                             />
                         )}
-                        <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300" type="submit">
-                            {isLogin ? "Login" : "Register"}
+                        <button className="w-full bg-[#00A19A] text-white py-2 px-4 rounded-md hover:bg-[#00969e] cursor-pointer transition-colors duration-300" type="submit">
+                            {isLogin ? "Masuk" : "Daftar"}
                         </button>
                     </form>
                     <p className="mt-4 text-center text-gray-600">
-                        {isLogin ? "Don't have an account? " : "Already have an account? "}
+                        {isLogin ? "Tidak punya akun? " : "Sudah punya akun? "}
                         <span
                             onClick={() => setIsLogin(!isLogin)}
-                            className="cursor-pointer text-blue-600 hover:underline"
+                            className="cursor-pointer text-[#00A19A] hover:underline"
                         >
-                            {isLogin ? "Register" : "Login"}
+                            {isLogin ? "Daftar" : "Masuk"}
                         </span>
                     </p>
                 </div>

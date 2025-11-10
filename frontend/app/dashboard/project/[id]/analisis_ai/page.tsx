@@ -8,8 +8,10 @@ import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
 import { ArrowPathIcon, DocumentIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { AIResultType, MaterialType } from "@/types";
+import useTitle from "@/hooks/useTitle";
 
 export default function AnalisisAIPage() {
+  useTitle('Analis - Analisis AI', 'Analisis AI untuk Analis');
   const { authToken } = useMyAppHook();
   const params = useParams<{ id: string }>();
   const projectId = params.id;
@@ -110,18 +112,15 @@ export default function AnalisisAIPage() {
     }
   };
 
-  const fetchMaterials = React.useCallback(async () => {
-    setLoadingMaterials(true);
+  const refreshMaterials = React.useCallback(async () => {
     try {
       const resp = await AxiosInstance.get(`/projects/${projectId}/materials`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setMaterials(resp.data.materials || []);
     } catch (err) {
-      console.error("Gagal mengambil materials:", err);
-      toast.error("Gagal memuat materi");
-    } finally {
-      setLoadingMaterials(false);
+      console.error("Gagal memperbarui daftar materi:", err);
+      toast.error("Gagal memperbarui daftar materi");
     }
   }, [authToken, projectId]);
 
@@ -130,7 +129,7 @@ export default function AnalisisAIPage() {
       await AxiosInstance.delete(`/materials/${materialId}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      await fetchMaterials();
+      await refreshMaterials(); // Only refresh the materials list after deletion
       setSuggestion(null);
       toast.success("Materi berhasil dihapus");
     } catch (err) {
@@ -140,32 +139,45 @@ export default function AnalisisAIPage() {
   };
 
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchData = async () => {
       setLoadingPage(true);
       try {
-        const resp = await AxiosInstance.get(
-          `/projects/${projectId}/questions`,
-          {
+        // Fetch questions and materials in parallel
+        const [questionsResp, materialsResp] = await Promise.all([
+          AxiosInstance.get(`/projects/${projectId}/questions`, {
             headers: { Authorization: `Bearer ${authToken}` },
-          }
-        );
+          }),
+          AxiosInstance.get(`/projects/${projectId}/materials`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          })
+        ]);
+
+        // Set questions with showSuggestion flag
         setQuestions(
-          (resp.data.questions || []).map((q: AIResultType) => ({
+          (questionsResp.data.questions || []).map((q: AIResultType) => ({
             ...q,
             showSuggestion: false,
           }))
         );
-      } catch (err) {
-        console.error("Gagal ambil questions:", err);
-        toast.error("Gagal memuat soal. Mohon coba lagi.");
+
+        // Set materials
+        setMaterials(materialsResp.data.materials || []);
+      } catch (error) {
+        // Only show error toast for non-auth errors
+        if (authToken === null) {
+          console.log("Auth error:", error);
+        } else {
+          console.error("Gagal memuat data:", error);
+          toast.error("Gagal memuat data. Mohon coba lagi.");
+        }
       } finally {
         setLoadingPage(false);
+        setLoadingMaterials(false);
       }
     };
 
-    fetchQuestions();
-    fetchMaterials();
-  }, [authToken, projectId, router, fetchMaterials]);
+    fetchData();
+  }, [authToken, projectId, router, refreshMaterials]);
 
   const handleMaterialSubmit = async () => {
     if (!authToken || !questions.length || !selectedMaterial) return;

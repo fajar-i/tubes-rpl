@@ -55,7 +55,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 htmlFor="nama_ujian"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Nama Ujian
+                Nama Ujian (Contoh : UAS/UTS/Harian/Formatif/Sumatif)
               </label>
               <input
                 type="text"
@@ -94,7 +94,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 htmlFor="kelas"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Kelas
+                Kelas dan jenjang
               </label>
               <input
                 type="text"
@@ -104,7 +104,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 onChange={(e) =>
                   setNewProject({ ...newProject, kelas: e.target.value })
                 }
-                placeholder="Masukkan kelas"
+                placeholder="Masukkan kelas (Contoh: 1 SD)"
               />
             </div>
 
@@ -141,7 +141,7 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 onChange={(e) =>
                   setNewProject({ ...newProject, capaian_pembelajaran: e.target.value })
                 }
-                placeholder="Masukkan capaian pembelajaran"
+                placeholder="Masukkan capaian pembelajaran (Contoh: Pada akhir fase A, siswa mampu menyelesaikan operasi aritmatika dasar)"
               />
             </div>
 
@@ -153,13 +153,15 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 Indikator Ketercapaian Pembelajaran
               </label>
               <textarea
-                id="semester"
-                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+                id="indikator_ketercapaian_pembelajaran"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-lg whitespace-pre-wrap"
                 value={newProject.indikator_ketercapaian_pembelajaran}
                 onChange={(e) =>
                   setNewProject({ ...newProject, indikator_ketercapaian_pembelajaran: e.target.value })
                 }
-                placeholder="Masukkan indikator ketercapaian pembelajaran"
+                placeholder="Masukkan indikator ketercapaian pembelajaran (Contoh: Pada akhir fase A, siswa mampu menyelesaikan operasi aritmatika dasar)&#10;Gunakan baris baru untuk setiap indikator"
+                rows={5}
+                style={{ whiteSpace: 'pre-wrap' }}
               />
             </div>
           </div>

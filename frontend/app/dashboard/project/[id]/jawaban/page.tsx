@@ -12,8 +12,10 @@ import { AxiosInstance } from "@/lib/axios";
 import { QuestionJawaban } from "@/types";
 import { DocumentIcon } from "@heroicons/react/24/outline";
 import * as XLSX from 'xlsx';
+import useTitle from "@/hooks/useTitle";
 
-export default function Jawaban() {
+export default function JawabanPage() {
+  useTitle('Analis - Jawaban', 'Jawaban soal dari Analis');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const params = useParams<{ id: string; tag: string; item: string }>();
@@ -83,14 +85,19 @@ export default function Jawaban() {
           );
         }
       } catch (error) {
-        console.error("Gagal mengambil data awal:", error);
-        toast.error("Gagal memuat data. Mohon coba lagi.");
-      } finally {
-        setLoading(false);
-      }
+        // Only show error toast for non-auth errors
+        if (authToken === null) {
+          console.log("Auth error:", error);
+        } else {
+          console.error("Gagal mengambil data awal:", error);
+          toast.error("Gagal memuat data. Mohon coba lagi.");
+        }
+      } 
     };
 
-    fetchData();
+    fetchData().finally(() => {
+      setLoading(false);
+    });
   }, [authToken, params.id, router]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,8 +121,6 @@ export default function Jawaban() {
         const rawData = XLSX.utils.sheet_to_json(worksheet, { 
           header: Array.from({ length: questions.length }, (_, i) => `Soal ${i + 1}`)
         });
-        
-        console.log("Raw data from Excel:", rawData);
         
         if (!Array.isArray(rawData) || rawData.length === 0) {
           toast.error('File Excel kosong atau tidak valid');
@@ -168,7 +173,6 @@ export default function Jawaban() {
         setTimeout(() => {
           if (spreadsheetRef.current?.[0]) {
             spreadsheetRef.current[0].setData(parsedData);
-            console.log("Spreadsheet data updated");
           }
         }, 100);
         
@@ -401,6 +405,13 @@ export default function Jawaban() {
           </div>
         </div>
 
+        {/* Hint for capital letters */}
+        <div className="flex-none px-4 mb-2">
+          <p className="text-sm text-gray-600 italic">
+            * Isi jawaban dengan huruf kapital (A, B, C, D, E)
+          </p>
+        </div>
+
         {/* Scrollable spreadsheet container */}
         <div className="flex-1 px-4 overflow-x-auto">
           <div className="h-full" style={{ minWidth: Math.max(800, (questions.length * 80) + 150) + 'px' }}>
@@ -434,7 +445,7 @@ export default function Jawaban() {
             <button
               onClick={handleSave}
               disabled={loading || questions.length === 0}
-              className="w-full max-w-md px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full max-w-md px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Memuat..." : "Simpan"}
             </button>

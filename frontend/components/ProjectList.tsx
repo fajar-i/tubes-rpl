@@ -30,8 +30,9 @@ const ProjectList: React.FC = () => {
               key={p.public_id}
               className="bg-[#20B2AA] text-white p-6 rounded-lg shadow-md"
             >
-              <h3 className="text-xl font-semibold mb-2">{p.nama_ujian}</h3>
-              <p className="text-sm mb-4">{p.semester}</p>
+              <h3 className="text-xl font-semibold mb-2">Kelas: {p.kelas}</h3>
+              <h3 className="text-2xl font-semibold mb-2">{p.nama_ujian}</h3>
+              <p className="text-sm mb-4">Semester: {p.semester}</p>
               <Link
                 href={`/dashboard/project/${p.public_id}/form`}
                 className="bg-white text-[#20B2AA] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors duration-300"

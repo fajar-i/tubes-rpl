@@ -66,6 +66,7 @@ export const AppProvider = ({
             setIsLoading(false)
         }
     }
+
     const register = async (name: string, email: string, password: string, password_confirmation: string) => {
         setIsLoading(true)
         try {
@@ -78,14 +79,16 @@ export const AppProvider = ({
             setIsLoading(false)
         }
     }
+
     const logout = () => {
         setAuthToken(null);
         setUser(null); // Clear user data on logout
         Cookies.remove("authToken");
         setIsLoading(false);
-        toast.success("User Logged Out");
+        toast.success("Anda keluar!");
         router.push("/auth")
     }
+
     return (
         <AppContext.Provider value={{ login, register, isLoading, setIsLoading, authToken, logout, user }}>
             {isLoading ? <Loader /> : children}
