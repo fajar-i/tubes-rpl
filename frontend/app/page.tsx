@@ -9,8 +9,24 @@ import {
   DocumentMagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import { useEffect } from "react";
+import { useMyAppHook } from "@/context/AppProvider";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const { authToken, isLoading } = useMyAppHook();
+
+  useEffect(() => {
+    if (!isLoading && authToken) {
+      router.replace("/dashboard");
+    }
+  }, [authToken, router, isLoading]);
+
+  if (isLoading) {
+    return null;
+  }
+
   return (
     <main>
       <Navbar />
@@ -18,14 +34,14 @@ export default function Home() {
       <div className="container mx-auto w-[90%] max-w-[1200px] flex flex-wrap items-center justify-between pt-10">
         <div className="flex-1 min-w-[300px] pr-10">
           <h1 className="text-5xl mb-10 text-gray-900 font-medium">
-            Evaluasi Pembelajaran dengan{" "}
-            <span className="font-bold">Mudah, Cepat, </span>dan{" "}
-            <span className="font-bold">Empiris</span>
+            Analisis Butir Soal dengan{" "}
+            <span className="font-bold">Tepat, Cepat, </span>dan{" "}
+            <span className="font-bold">Akurat</span>
           </h1>
           <p className="text-lg text-gray-700 mb-8">
-            Proses analisis empiris dari soal ujianmu secara instan! Pastikan
-            soal yang kamu gunakan telah memenuhi standar evaluasi seperti
-            Cronbach&apos;s Alpha, nilai korelasi, dan indikator lainnya.
+            Platform analisis butir soal otomatis untuk meningkatkan kualitas evaluasi pembelajaran. 
+            Dapatkan hasil analisis validitas, reliabilitas, tingkat kesukaran, dan daya pembeda soal 
+            secara instan dengan metode yang terstandar.
           </p>
           <a
             href="/auth"
@@ -56,10 +72,10 @@ export default function Home() {
               <div className="w-12 h-12 bg-[#3cbdb8] rounded-lg flex items-center justify-center mb-4">
                 <ChartBarIcon width={30} height={30} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Analisis Empiris</h3>
+              <h3 className="text-xl font-semibold mb-3">Analisis Komprehensif</h3>
               <p className="text-gray-600">
-                Dapatkan analisis mendalam tentang kualitas soal ujian
-                berdasarkan berbagai parameter standar.
+                Analisis butir soal mencakup validitas, reliabilitas, tingkat kesukaran,
+                dan daya pembeda dengan metode yang terstandar.
               </p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -67,21 +83,21 @@ export default function Home() {
                 <CursorArrowRaysIcon width={30} height={30} />
               </div>
               <h3 className="text-xl font-semibold mb-3">
-                Dashboard Interaktif
+                Input Data Mudah
               </h3>
               <p className="text-gray-600">
-                Visualisasi data yang mudah dipahami melalui dashboard
-                interaktif dengan grafik dan tabel.
+                Input jawaban peserta yang mudah melalui spreadsheet interaktif 
+                dengan validasi format otomatis.
               </p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <div className="w-12 h-12 bg-[#3cbdb8] rounded-lg flex items-center justify-center mb-4">
                 <DocumentMagnifyingGlassIcon width={30} height={30} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Laporan Detail</h3>
+              <h3 className="text-xl font-semibold mb-3">Analisis AI</h3>
               <p className="text-gray-600">
-                Generate laporan lengkap yang mencakup semua aspek analisis
-                untuk dokumentasi dan evaluasi.
+                Validasi kualitas soal menggunakan AI untuk memastikan kejelasan perumusan
+                dan kesesuaian dengan tujuan pembelajaran.
               </p>
             </div>
           </div>

@@ -153,13 +153,15 @@ const ProjectAddModal: React.FC<ProjectAddModalProps> = ({
                 Indikator Ketercapaian Pembelajaran
               </label>
               <textarea
-                id="semester"
-                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
+                id="indikator_ketercapaian_pembelajaran"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 rounded-lg whitespace-pre-wrap"
                 value={newProject.indikator_ketercapaian_pembelajaran}
                 onChange={(e) =>
                   setNewProject({ ...newProject, indikator_ketercapaian_pembelajaran: e.target.value })
                 }
-                placeholder="Masukkan indikator ketercapaian pembelajaran"
+                placeholder="Masukkan indikator ketercapaian pembelajaran&#10;Gunakan baris baru untuk setiap indikator"
+                rows={5}
+                style={{ whiteSpace: 'pre-wrap' }}
               />
             </div>
           </div>

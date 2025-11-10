@@ -85,10 +85,10 @@ export const AppProvider = ({
         setUser(null); // Clear user data on logout
         Cookies.remove("authToken");
         setIsLoading(false);
-        toast.success("User Logged Out");
+        toast.success("Anda keluar!");
         router.push("/auth")
     }
-    
+
     return (
         <AppContext.Provider value={{ login, register, isLoading, setIsLoading, authToken, logout, user }}>
             {isLoading ? <Loader /> : children}

@@ -17,17 +17,17 @@ const Navbar = () => {
           </Link>
           <ul className="hidden lg:flex lg:items-center space-x-8 text-black text-base">
             <li>
-              <Link href="/#fitur" className="hover:text-blue-600">
+              <Link href="/#fitur" className="hover:text-[#00A19A]">
                 Fitur
               </Link>
             </li>
             <li>
-              <Link href="/dokumentasi" className="hover:text-blue-600">
+              <Link href="/dokumentasi" className="hover:text-[#00a19A]">
                 Dokumentasi
               </Link>
             </li>
             <li>
-              <Link href="/#faq" className="hover:text-blue-600">
+              <Link href="/#faq" className="hover:text-[#00A19A]">
                 FAQ
               </Link>
             </li>

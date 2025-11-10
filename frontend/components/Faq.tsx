@@ -8,24 +8,24 @@ interface FaqItem {
 
 const faqList: FaqItem[] = [
     {
-        question: "Apa itu analisis empiris soal?",
-        answer: "Analisis empiris soal adalah proses evaluasi kualitas soal berdasarkan data hasil ujian siswa, meliputi validitas, reliabilitas, tingkat kesukaran, dan daya beda soal."
+        question: "Apa itu analisis butir soal?",
+        answer: "Analisis butir soal adalah proses pengkajian kualitas soal untuk menentukan mutu sebuah tes. Analisis mencakup validitas, reliabilitas, tingkat kesukaran, dan daya pembeda soal. Hasil analisis membantu pendidik mengidentifikasi soal yang baik, perlu diperbaiki, atau harus diganti."
     },
     {
-        question: "Bagaimana cara menggunakan platform ini?",
-        answer: "Cukup unggah file hasil ujian Anda, dan platform kami akan secara otomatis menganalisis dan memberikan laporan lengkap tentang kualitas soal-soal ujian tersebut."
+        question: "Apa saja parameter yang dianalisis?",
+        answer: "Platform kami menganalisis empat parameter utama: 1) Validitas - mengukur ketepatan soal dalam menilai kemampuan, 2) Reliabilitas - konsistensi hasil pengukuran, 3) Tingkat Kesukaran - proporsi siswa yang menjawab benar, dan 4) Daya Pembeda - kemampuan soal membedakan siswa berkemampuan tinggi dan rendah."
     },
     {
-        question: "Berapa lama proses analisis berlangsung?",
-        answer: "Proses analisis berlangsung secara instan dan hasil dapat dilihat langsung melalui dashboard interaktif kami."
+        question: "Bagaimana cara menggunakan Analis?",
+        answer: "Penggunaan Analis sangat mudah: 1) Buat proyek baru dan masukkan informasi tes, 2) Input soal-soal tes beserta kunci jawaban, 3) Masukkan jawaban peserta menggunakan spreadsheet interaktif, 4) Dapatkan hasil analisis secara instan, dan 5) Gunakan fitur analisis AI untuk validasi tambahan."
     },
     {
-        question: "Format file apa yang didukung?",
-        answer: "Platform kami mendukung berbagai format file umum seperti Excel (.xlsx, .xls), CSV, dan format khusus lainnya yang dapat disesuaikan dengan kebutuhan Anda."
+        question: "Bagaimana format input jawaban peserta?",
+        answer: "Input jawaban menggunakan spreadsheet interaktif yang mudah digunakan. Jawaban diinput dengan huruf kapital (A, B, C, D, atau E) sesuai pilihan jawaban peserta. Sistem akan memvalidasi format secara otomatis untuk menghindari kesalahan input."
     },
     {
-        question: "Apakah data saya aman?",
-        answer: "Ya, kami menerapkan standar keamanan tinggi untuk melindungi data Anda. Semua data dienkripsi dan disimpan dengan aman di server kami."
+        question: "Apa keunggulan fitur analisis AI?",
+        answer: "Fitur analisis AI kami menggunakan model bahasa canggih untuk mengevaluasi aspek kualitatif soal, meliputi: kejelasan perumusan, kesesuaian dengan tujuan pembelajaran, kedalaman kognitif, dan validitas konstruk. Hasil analisis AI melengkapi analisis empiris untuk evaluasi soal yang lebih komprehensif."
     }
 ]
 

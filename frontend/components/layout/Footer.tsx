@@ -20,7 +20,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/auth"
-                  className="text-gray-400 hover:text-black transition-colors"
+                  className="text-gray-400 hover:text-[#00A19A] transition-colors"
                 >
                   Masuk
                 </a>
@@ -28,7 +28,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/dokumentasi"
-                  className="text-gray-400 hover:text-black transition-colors"
+                  className="text-gray-400 hover:text-[#00A19A] transition-colors"
                 >
                   Dokumentasi
                 </a>
@@ -36,7 +36,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/#faq"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-[#00A19A] transition-colors"
                 >
                   FAQ
                 </Link>

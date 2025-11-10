@@ -133,7 +133,7 @@ const ProjectPage: React.FC = () => {
                   {p.indikator_ketercapaian_pembelajaran && (
                     <div className="flex flex-col text-gray-700">
                       <p className="font-bold text-[#00A9A2]">Indikator Ketercapaian Pembelajaran</p>
-                      <span>{p.indikator_ketercapaian_pembelajaran}</span>
+                      <span className="whitespace-pre-wrap">{p.indikator_ketercapaian_pembelajaran}</span>
                     </div>
                   )}
                 </div>

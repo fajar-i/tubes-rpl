@@ -85,16 +85,13 @@ export default function ResultPage() {
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const margins = { top: 35, bottom: 10, left: 10, right: 10 };
       const contentWidth = pdfWidth - margins.left - margins.right;
-
+      
       // Add title
       pdf.setFontSize(16);
-      pdf.text(`Hasil Analisis - ${Date.now()}`, pdfWidth / 2, 15, {
+      pdf.text(`Hasil Analisis - ${new Date().toLocaleDateString("id-ID")}`, pdfWidth / 2, 15, {
         align: "center",
       });
       pdf.setFontSize(12);
-      pdf.text(new Date().toLocaleDateString("id-ID"), pdfWidth / 2, 25, {
-        align: "center",
-      });
 
       let yOffset = margins.top;
 
@@ -160,7 +157,7 @@ export default function ResultPage() {
         );
       }
 
-      pdf.save(`hasil-analisis-${Date.now()}.pdf`);
+      pdf.save(`Hasil Analisis - ${new Date().toLocaleDateString("id-ID")}.pdf`);
       toast.success("PDF berhasil diunduh");
     } catch (error) {
       console.error("Error exporting PDF:", error);

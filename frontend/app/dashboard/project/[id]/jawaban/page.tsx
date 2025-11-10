@@ -403,6 +403,13 @@ export default function JawabanPage() {
           </div>
         </div>
 
+        {/* Hint for capital letters */}
+        <div className="flex-none px-4 mb-2">
+          <p className="text-sm text-gray-600 italic">
+            * Isi jawaban dengan huruf kapital (A, B, C, D, E)
+          </p>
+        </div>
+
         {/* Scrollable spreadsheet container */}
         <div className="flex-1 px-4 overflow-x-auto">
           <div className="h-full" style={{ minWidth: Math.max(800, (questions.length * 80) + 150) + 'px' }}>
@@ -436,7 +443,7 @@ export default function JawabanPage() {
             <button
               onClick={handleSave}
               disabled={loading || questions.length === 0}
-              className="w-full max-w-md px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full max-w-md px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Memuat..." : "Simpan"}
             </button>

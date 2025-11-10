@@ -175,7 +175,7 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
               </label>
               <textarea
                 id="indikator_ketercapaian_pembelajaran"
-                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 whitespace-pre-wrap"
                 value={editedProject.indikator_ketercapaian_pembelajaran || ""}
                 onChange={(e) =>
                   setEditedProject({ 
@@ -183,7 +183,9 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({
                     indikator_ketercapaian_pembelajaran: e.target.value 
                   })
                 }
-                placeholder="Masukkan indikator ketercapaian pembelajaran"
+                placeholder="Masukkan indikator ketercapaian pembelajaran&#10;Gunakan baris baru untuk setiap indikator"
+                rows={5}
+                style={{ whiteSpace: 'pre-wrap' }}
               />
             </div>
           </div>
