@@ -31,7 +31,7 @@ export default function ResultPage() {
 
     const fetchData = async () => {
       try {
-        // Get questions and analysis results in parallel using Promise.all
+        // Get questions, analysis results, and project details in parallel
         const [questionsResponse, analysisResponse] = await Promise.all([
           AxiosInstance.get(`/projects/${params.id}/questions`, {
             headers: {
@@ -42,10 +42,10 @@ export default function ResultPage() {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
-          })
+          }),
         ]);
 
-        // Set both states
+        // Set all states
         setQuestions(questionsResponse.data.questions);
         setAnalysisResults(analysisResponse.data.analisis);
       } catch (error) {
@@ -79,32 +79,50 @@ export default function ResultPage() {
     if (!contentRef.current) return;
 
     setExportLoading(true);
+    
     try {
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margins = { top: 35, bottom: 10, left: 10, right: 10 };
+      const margins = { top: 40, bottom: 10, left: 20, right: 20 }; // Increased margins
       const contentWidth = pdfWidth - margins.left - margins.right;
-      
-      // Add title
-      pdf.setFontSize(16);
-      pdf.text(`Hasil Analisis - ${new Date().toLocaleDateString("id-ID")}`, pdfWidth / 2, 15, {
-        align: "center",
-      });
-      pdf.setFontSize(12);
 
+      // Add header with project details
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(16);
+      pdf.text("Hasil Analisis Butir Soal", pdfWidth / 2, 20, { align: "center" });
+      
+      // Add project details
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
+      const details = [
+        `Tanggal: ${new Date().toLocaleDateString("id-ID")}`
+      ];
+
+      details.forEach((detail, index) => {
+        pdf.text(detail, margins.left, 35 + (index * 6));
+      });
+      
       let yOffset = margins.top;
 
       // Process each question card separately
-      const questionElements =
-        contentRef.current.querySelectorAll(".question-card");
+      const questionElements = Array.from(
+        contentRef.current.querySelectorAll(".question-card")
+      );
 
-      for (const element of Array.from(questionElements)) {
+      // Process cards one by one to ensure proper rendering
+      for (const element of questionElements) {
+        // Wait a bit before capturing each element
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const canvas = await html2canvas(element as HTMLElement, {
-          scale: 1.5,
+          scale: 1.5, // Increased scale for better quality
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff",
+          removeContainer: true,
+          allowTaint: false,
+          foreignObjectRendering: false
         });
 
         const imgHeight = (canvas.height * contentWidth) / canvas.width;
@@ -115,10 +133,13 @@ export default function ResultPage() {
           yOffset = margins.top;
         }
 
+        // Convert canvas to PNG for better quality
+        const imgData = canvas.toDataURL("image/png", 0.75);
+
         // Add the image to PDF
         pdf.addImage(
-          canvas.toDataURL("image/jpeg", 0.95),
-          "JPEG",
+          imgData,
+          "PNG",
           margins.left,
           yOffset,
           contentWidth,
@@ -132,11 +153,17 @@ export default function ResultPage() {
       const reliabilityElement =
         contentRef.current.querySelector(".reliability-card");
       if (reliabilityElement) {
+        // Wait a bit before capturing reliability card
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const canvas = await html2canvas(reliabilityElement as HTMLElement, {
           scale: 1.5,
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff",
+          removeContainer: true,
+          allowTaint: false,
+          foreignObjectRendering: false
         });
 
         const imgHeight = (canvas.height * contentWidth) / canvas.width;
@@ -147,9 +174,10 @@ export default function ResultPage() {
           yOffset = margins.top;
         }
 
+        // Add the reliability card with PNG format
         pdf.addImage(
-          canvas.toDataURL("image/jpeg", 0.95),
-          "JPEG",
+          canvas.toDataURL("image/png", 0.75),
+          "PNG",
           margins.left,
           yOffset,
           contentWidth,
@@ -157,7 +185,9 @@ export default function ResultPage() {
         );
       }
 
-      pdf.save(`Hasil Analisis - ${new Date().toLocaleDateString("id-ID")}.pdf`);
+      // Generate filename from project details
+      const timestamp = new Date().toLocaleDateString("id-ID").replace(/\//g, '-');
+      pdf.save(`Hasil Analisis_${timestamp}.pdf`);
       toast.success("PDF berhasil diunduh");
     } catch (error) {
       console.error("Error exporting PDF:", error);
@@ -194,6 +224,7 @@ export default function ResultPage() {
               question={question}
               analysisResults={analysisResults}
               index={index}
+              pdfMode={exportLoading}
             />
           ))}
 
@@ -201,6 +232,7 @@ export default function ResultPage() {
             analysisResults?.reliabilitas_tes !== undefined && (
               <ReliabilityCard
                 reliabilityScore={analysisResults.reliabilitas_tes}
+                pdfMode={exportLoading}
               />
             )}
         </div>

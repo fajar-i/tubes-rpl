@@ -1,13 +1,15 @@
 import React from 'react';
 import { QuestionResult, AnalysisResults, QuestionDistractorAnalysis, OptionAnalysis } from "@/types";
+import InterpretationPopover from './InterpretationPopover';
 
 interface QuestionCardProps {
   question: QuestionResult;
   analysisResults: AnalysisResults | null;
-  index: number
+  index: number;
+  pdfMode?: boolean;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults, index }) => {
+const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults, index, pdfMode = false }) => {
   return (
     <div className="question-card bg-white shadow-sm border border-gray-200 rounded-lg p-4 mb-4">
       <h3 className="text-lg text-[#00A1A9] font-bold mb-2">Soal #{index + 1}</h3>
@@ -54,22 +56,54 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, analysisResults, 
       </ul>
 
       {analysisResults && (
-        <div className="flex flex-row p-2 items-center justify-between text-lg mt-3">
-          {analysisResults.tingkat_kesukaran && analysisResults.tingkat_kesukaran[question.id] !== undefined && (
-            <span className="px-3 py-2 bg-green-500 text-white font-normal rounded-full">
-              Kesukaran: <span>{analysisResults.tingkat_kesukaran[question.id]?.toFixed(2)}</span>
-            </span>
-          )}
-          {analysisResults.daya_beda && analysisResults.daya_beda[question.id] !== undefined && (
-            <span className="px-3 py-2 bg-green-500 text-white font-normal rounded-full">
-              Daya Beda: <span>{analysisResults.daya_beda[question.id]?.toFixed(2)}</span>
-            </span>
-          )}
-          {analysisResults.validitas_soal && analysisResults.validitas_soal[question.id] !== undefined && (
-            <span className="px-3 py-2 bg-green-500 text-white font-normal rounded-full">
-              Validitas: <span>{analysisResults.validitas_soal[question.id]?.toFixed(2)}</span>
-            </span>
-          )}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1">Validitas:</p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  {analysisResults.validitas_soal && analysisResults.validitas_soal[question.id] !== undefined
+                    ? analysisResults.validitas_soal[question.id]?.toFixed(3)
+                    : "N/A"}
+                </span>
+                <InterpretationPopover
+                  value={analysisResults.validitas_soal ? analysisResults.validitas_soal[question.id] : null}
+                  type="validitas"
+                  pdfMode={pdfMode}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1">Tingkat Kesukaran:</p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  {analysisResults.tingkat_kesukaran && analysisResults.tingkat_kesukaran[question.id] !== undefined
+                    ? analysisResults.tingkat_kesukaran[question.id]?.toFixed(3)
+                    : "N/A"}
+                </span>
+                <InterpretationPopover
+                  value={analysisResults.tingkat_kesukaran ? analysisResults.tingkat_kesukaran[question.id] : null}
+                  type="tingkat_kesukaran"
+                  pdfMode={pdfMode}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1">Daya Pembeda:</p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  {analysisResults.daya_beda && analysisResults.daya_beda[question.id] !== undefined
+                    ? analysisResults.daya_beda[question.id]?.toFixed(3)
+                    : "N/A"}
+                </span>
+                <InterpretationPopover
+                  value={analysisResults.daya_beda ? analysisResults.daya_beda[question.id] : null}
+                  type="daya_pembeda"
+                  pdfMode={pdfMode}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
