@@ -10,7 +10,7 @@ export default function Footer() {
               <span className="text-[#00A1A9] font-semibold">Analis</span>
             </Link>
             <p className="text-gray-400">
-              Platform analisis empiris soal untuk meningkatkan kualitas
+              Platform analisis komprehensif soal untuk meningkatkan kualitas
               evaluasi pembelajaran.
             </p>
           </div>
@@ -45,7 +45,7 @@ export default function Footer() {
           </div>
           <div>
             <h3 className="text-xl text-black font-bold mb-4">Kontak</h3>
-            <p className="text-gray-400">Email: support@analisissoal.com</p>
+            <p className="text-gray-400">Email: analistech@gmail.com</p>
             <p className="text-gray-400">Telp: (021) 1234-5678</p>
           </div>
         </div>
