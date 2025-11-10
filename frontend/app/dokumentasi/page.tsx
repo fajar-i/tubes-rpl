@@ -1,5 +1,9 @@
 import Navbar from "@/components/layout/Navbar";
 
+export const metadata = {
+  title: 'Analis - Dokumentasi',
+};
+
 export default function Dokumentasi() {
     return (
         <main>

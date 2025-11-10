@@ -8,8 +8,10 @@ import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
 import { ArrowPathIcon, DocumentIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { AIResultType, MaterialType } from "@/types";
+import useTitle from "@/hooks/useTitle";
 
 export default function AnalisisAIPage() {
+  useTitle('Analis - Analisis AI', 'Analisis AI untuk Analis');
   const { authToken } = useMyAppHook();
   const params = useParams<{ id: string }>();
   const projectId = params.id;

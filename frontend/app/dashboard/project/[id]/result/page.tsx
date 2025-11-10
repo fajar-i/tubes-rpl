@@ -13,8 +13,10 @@ import html2canvas from "html2canvas-pro";
 
 import QuestionCard from "@/components/ui/QuestionCard";
 import ReliabilityCard from "@/components/ui/ReliabilityCard";
+import useTitle from "@/hooks/useTitle";
 
-export default function EditorPage() {
+export default function ResultPage() {
+  useTitle('Analis - Hasil', 'Hasil dari Analis');
   const router = useRouter();
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);

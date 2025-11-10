@@ -93,7 +93,7 @@ const Sidebar = () => {
             className="flex items-center p-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 w-full cursor-pointer"
           >
             <ArrowLeftStartOnRectangleIcon className="h-5 w-5 mr-3" />
-            Logout
+            Keluar
           </button>
         </div>
       </aside>

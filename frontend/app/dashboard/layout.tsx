@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { ProjectProvider } from "@/context/ProjectContext";
+import useTitle from "@/hooks/useTitle";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  useTitle('Analis - Dashboard', 'Dashboard analis');
   const router = useRouter();
   const { authToken, user } = useMyAppHook();
 

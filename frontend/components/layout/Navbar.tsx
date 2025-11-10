@@ -13,21 +13,21 @@ const Navbar = () => {
         {/* Logo and Desktop Nav Links */}
         <div className="flex items-center">
           <Link href="/" className="text-2xl font-istok mr-8">
-            <span className="text-[#00A1A9] font-semibold">Analis</span>
+            <span className="text-[#00A19A] font-semibold">Analis</span>
           </Link>
           <ul className="hidden lg:flex lg:items-center space-x-8 text-black text-base">
             <li>
-              <Link href="/#fitur" className="hover:text-gray-600">
+              <Link href="/#fitur" className="hover:text-blue-600">
                 Fitur
               </Link>
             </li>
             <li>
-              <Link href="/dokumentasi" className="hover:text-gray-600">
+              <Link href="/dokumentasi" className="hover:text-blue-600">
                 Dokumentasi
               </Link>
             </li>
             <li>
-              <Link href="/#faq" className="hover:text-gray-600">
+              <Link href="/#faq" className="hover:text-blue-600">
                 FAQ
               </Link>
             </li>
@@ -62,28 +62,28 @@ const Navbar = () => {
         >
           <ul className="flex flex-col items-center space-y-4 text-black text-base mb-4">
             <li>
-              <Link href="/fitur" className="block w-full text-center py-2 hover:text-gray-600">
+              <Link href="/fitur" className="block w-full text-center py-2 hover:text-[#00A1A9]">
                 Fitur
               </Link>
             </li>
             <li>
-              <Link href="/dokumentasi" className="block w-full text-center py-2 hover:text-gray-600">
+              <Link href="/dokumentasi" className="block w-full text-center py-2 hover:text-[#00A1A9]">
                 Dokumentasi
               </Link>
             </li>
             <li>
-              <Link href="/faq" className="block w-full text-center py-2 hover:text-gray-600">
+              <Link href="/faq" className="block w-full text-center py-2 hover:text-[#00A1A9]">
                 FAQ
               </Link>
             </li>
           </ul>
           <div className="flex flex-col items-center space-y-4">
-            <Link href="/auth" className="block w-full text-center py-2 hover:text-gray-600">
-              Log in
+            <Link href="/auth" className="block w-full text-center py-2 hover:text-[#00A1A9]">
+              Masuk
             </Link>
             <Link
               href="/register"
-              className="block w-full text-center border border-black px-4 py-2 rounded-md hover:bg-black hover:text-white transition-colors"
+              className="block w-full text-center border border-[#00A1A9] px-4 py-2 rounded-md hover:bg-[#00A1A9] hover:text-white transition-colors"
             >
               Daftar
             </Link>
@@ -92,12 +92,12 @@ const Navbar = () => {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden lg:flex items-center space-x-4">
-          <Link href="/auth" className="hover:text-gray-600">
-            Log in
+          <Link href="/auth" className="hover:text-[#00A1A9]">
+            Masuk
           </Link>
           <Link
             href="/auth"
-            className="border border-black px-4 py-2 rounded-md hover:bg-black hover:text-white transition-colors"
+            className="border border-[#00A19A] px-4 py-2 rounded-md hover:bg-[#00A19A] hover:text-white transition-colors"
           >
             Daftar
           </Link>

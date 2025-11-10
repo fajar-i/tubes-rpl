@@ -10,8 +10,10 @@ import { AxiosInstance } from "@/lib/axios";
 import { OptionForm, QuestionForm } from "@/types";
 import EditableText from "@/components/ui/EditableText";
 import QuestionsAddModal from "@/components/ui/modal/QuestionsAddModal";
+import useTitle from "@/hooks/useTitle";
 
-export default function EditorPage() {
+export default function FormPage() {
+  useTitle('Analis - Form Soal', 'Form soal Analis');
   const router = useRouter();
   const { authToken } = useMyAppHook();
   const [loading, setLoading] = useState(true);

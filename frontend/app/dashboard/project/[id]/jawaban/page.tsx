@@ -12,8 +12,10 @@ import { AxiosInstance } from "@/lib/axios";
 import { QuestionJawaban } from "@/types";
 import { DocumentIcon } from "@heroicons/react/24/outline";
 import * as XLSX from 'xlsx';
+import useTitle from "@/hooks/useTitle";
 
-export default function Jawaban() {
+export default function JawabanPage() {
+  useTitle('Analis - Jawaban', 'Jawaban soal dari Analis');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const params = useParams<{ id: string; tag: string; item: string }>();

@@ -19,7 +19,7 @@ const istok_web = Istok_Web({
 })
 
 export const metadata: Metadata = {
-  title: "Analis",
+  title: "Analis - Platform Pintar dengan NLP untuk Automasi Analisis Butir Soal",
   description: "Analisis butir soal secara otomatis",
 };
 
