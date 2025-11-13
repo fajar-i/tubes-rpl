@@ -6,7 +6,7 @@ import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
-import { ArrowPathIcon, DocumentIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, DocumentIcon, TrashIcon, PencilIcon, SparklesIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { AIResultType, MaterialType } from "@/types";
 import useTitle from "@/hooks/useTitle";
 
@@ -31,10 +31,11 @@ export default function AnalisisAIPage() {
   const [questions, setQuestions] = useState<AIResultType[]>([]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState<boolean>(false);
-  const [selectedMaterial, setSelectedMaterial] = useState<string>("");
+  const [materialContent, setMaterialContent] = useState<string>("");
   const [currentMaterial, setCurrentMaterial] = useState<MaterialType | null>(null);
-  const [materials, setMaterials] = useState<MaterialType[]>([]);
-  const [loadingMaterials, setLoadingMaterials] = useState<boolean>(true);
+  const [isEditingMaterial, setIsEditingMaterial] = useState<boolean>(false);
+  const [hasExistingAnalysis, setHasExistingAnalysis] = useState<boolean>(false);
+  const [expandedQuestions, setExpandedQuestions] = useState<{ [key: number]: boolean }>({});
 
   const applySuggestions = async (question: AIResultType) => {
     try {
@@ -49,13 +50,14 @@ export default function AnalisisAIPage() {
         rata_rata_skor: question.rata_rata_skor,
         bloom_taxonomy: question.bloom_taxonomy,
         note: question.note,
+        
       };
 
       // Update question text in database
       if (question.ai_suggestion_question) {
         await AxiosInstance.put(
           `/questions/${question.id}`,
-          { text: question.ai_suggestion_question },
+          { text: question.ai_suggestion_question, ai_validation_result: null },
           { headers: { Authorization: `Bearer ${authToken}` } }
         );
       }
@@ -68,18 +70,31 @@ export default function AnalisisAIPage() {
         const updateOptionPromises = question.ai_suggestion_options.map(
           (option, index) => {
             if (question.options && question.options[index]) {
-              // Update local options data
+              // Update local options data with both text and is_right
               if (updatedQuestion.options && updatedQuestion.options[index]) {
                 updatedQuestion.options[index].text = option.text;
+                updatedQuestion.options[index].is_right = option.is_right || false;
               }
 
-              return AxiosInstance.put(
+              // Update text
+              const updateTextPromise = AxiosInstance.put(
                 `/options/${question.options[index].id}`,
                 {
                   text: option.text,
                 },
                 { headers: { Authorization: `Bearer ${authToken}` } }
               );
+
+              // Update is_right using the dedicated endpoint
+              const updateIsRightPromise = option.is_right
+                ? AxiosInstance.put(
+                  `/rightOption/${question.options[index].id}`,
+                  {},
+                  { headers: { Authorization: `Bearer ${authToken}` } }
+                )
+                : Promise.resolve();
+
+              return Promise.all([updateTextPromise, updateIsRightPromise]);
             }
             return null;
           }
@@ -90,8 +105,8 @@ export default function AnalisisAIPage() {
 
       // Update local state with the modified question while preserving other questions and their suggestion states
       setQuestions(
-        questions.map((q) => 
-          q.id === question.id 
+        questions.map((q) =>
+          q.id === question.id
             ? { ...updatedQuestion, showSuggestion: false }
             : { ...q } // Keep existing suggestion state for other questions
         )
@@ -112,29 +127,157 @@ export default function AnalisisAIPage() {
     }
   };
 
-  const refreshMaterials = React.useCallback(async () => {
-    try {
-      const resp = await AxiosInstance.get(`/projects/${projectId}/materials`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      setMaterials(resp.data.materials || []);
-    } catch (err) {
-      console.error("Gagal memperbarui daftar materi:", err);
-      toast.error("Gagal memperbarui daftar materi");
+  const saveMaterial = async () => {
+    if (!authToken || !questions.length || !materialContent.trim()) {
+      toast.error("Materi tidak boleh kosong");
+      return;
     }
-  }, [authToken, projectId]);
 
-  const deleteMaterial = async (materialId: number) => {
+    setLoadingSuggestion(true);
+
     try {
-      await AxiosInstance.delete(`/materials/${materialId}`, {
+      if (currentMaterial) {
+        // Update existing material
+        await AxiosInstance.put(
+          `/materials/${currentMaterial.id}`,
+          { content: materialContent },
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+        // Immediately update local state with new content
+        setCurrentMaterial({
+          ...currentMaterial,
+          content: materialContent,
+        });
+        toast.success("Materi berhasil diperbarui");
+      } else {
+        // Create new material
+        const materialRes = await AxiosInstance.post(
+          `/projects/${projectId}/materials`,
+          { content: materialContent },
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+
+        if (materialRes.data.status) {
+          setCurrentMaterial(materialRes.data.material);
+          toast.success("Materi berhasil disimpan");
+        }
+      }
+
+      setIsEditingMaterial(false);
+    } catch (err) {
+      console.error("Gagal menyimpan materi:", err);
+      toast.error("Gagal menyimpan materi ajar");
+    } finally {
+      setLoadingSuggestion(false);
+    }
+  };
+
+  const deleteMaterial = async () => {
+    if (!currentMaterial) return;
+
+    try {
+      await AxiosInstance.delete(`/materials/${currentMaterial.id}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      await refreshMaterials(); // Only refresh the materials list after deletion
+      // Immediately update local state
+      setCurrentMaterial(null);
+      setMaterialContent("");
+      setIsEditingMaterial(false);
       setSuggestion(null);
       toast.success("Materi berhasil dihapus");
     } catch (err) {
       console.error("Gagal menghapus material:", err);
       toast.error("Gagal menghapus materi");
+    }
+  };
+
+  const analyzeMaterial = async () => {
+    if (!authToken || !questions.length || !currentMaterial) {
+      toast.error("Harap simpan materi terlebih dahulu");
+      return;
+    }
+
+    setLoadingSuggestion(true);
+
+    try {
+      const validationPromises = questions.map(async (question) => {
+        try {
+          // Use retryvalidate endpoint if analysis already exists, otherwise use validate
+          const endpoint = hasExistingAnalysis
+            ? `/question/${question.id}/retryvalidate`
+            : `/question/${question.id}/validate`;
+
+          const response = await AxiosInstance.post(
+            endpoint,
+            null,
+            { headers: { Authorization: `Bearer ${authToken}` } }
+          );
+
+          const validationData = response.data.data;
+          return {
+            data: {
+              status: true,
+              question: {
+                ...question,
+                id: question.id,
+                text: question.text,
+                options: question.options,
+                kesimpulan_validitas: validationData.kesimpulan_validitas || "Tidak Valid",
+                skor: validationData.skor || defaultScores,
+                rata_rata_skor: validationData.rata_rata_skor || 0,
+                note: validationData.note || null,
+                bloom_taxonomy: validationData.bloom_taxonomy || null,
+                ai_suggestion_question: validationData.ai_suggestion_question || null,
+                ai_suggestion_options: validationData.ai_suggestion_options || [],
+                showSuggestion: false,
+              },
+            },
+          };
+        } catch (error) {
+          console.error(`Error validating question ${question.id}:`, error);
+          return {
+            data: {
+              status: false,
+              question: {
+                ...question,
+                id: question.id,
+                is_valid: false,
+                note: "Validasi gagal dilakukan",
+                text: question.text,
+                skor: defaultScores,
+                kesimpulan_validitas: "Tidak Valid" as const,
+                rata_rata_skor: 0,
+                bloom_taxonomy: null,
+                ai_suggestion_question: null,
+                ai_suggestion_options: [],
+                showSuggestion: false,
+              },
+            },
+          };
+        }
+      });
+
+      const validationResults = await Promise.all(validationPromises);
+      const updatedQuestions = validationResults.map((res) => ({
+        ...res.data.question,
+        id: res.data.question.id,
+        showSuggestion: false,
+      }));
+
+      setQuestions(updatedQuestions);
+      setSuggestion("completed");
+      // Open all questions on first validation
+      const newExpandedState: { [key: number]: boolean } = {};
+      updatedQuestions.forEach((q) => {
+        newExpandedState[q.id] = true;
+      });
+      setExpandedQuestions(newExpandedState);
+      toast.success("Analisis materi berhasil dilakukan");
+    } catch (err) {
+      console.error("Gagal menganalisis:", err);
+      toast.error("Gagal menganalisis dengan materi");
+    } finally {
+      setLoadingSuggestion(false);
     }
   };
 
@@ -152,16 +295,45 @@ export default function AnalisisAIPage() {
           })
         ]);
 
-        // Set questions with showSuggestion flag
-        setQuestions(
-          (questionsResp.data.questions || []).map((q: AIResultType) => ({
+        // Process questions and load saved AI validation results
+        const questionsData = (questionsResp.data.questions || []).map((q: AIResultType) => {
+          // Check if question has saved ai_validation_result
+          if (q.ai_validation_result && Object.keys(q.ai_validation_result).length > 0) {
+            const savedAnalysis = q.ai_validation_result;
+            return {
+              ...q,
+              showSuggestion: false,
+              // Load saved analysis data
+              kesimpulan_validitas: savedAnalysis.kesimpulan_validitas || "Tidak Valid",
+              skor: savedAnalysis.skor || defaultScores,
+              rata_rata_skor: savedAnalysis.rata_rata_skor || 0,
+              note: savedAnalysis.note || null,
+              bloom_taxonomy: savedAnalysis.bloom_taxonomy || null,
+              ai_suggestion_question: savedAnalysis.ai_suggestion_question || null,
+              ai_suggestion_options: savedAnalysis.ai_suggestion_options || [],
+            };
+          }
+          return {
             ...q,
             showSuggestion: false,
-          }))
-        );
+          };
+        });
 
-        // Set materials
-        setMaterials(materialsResp.data.materials || []);
+        setQuestions(questionsData);
+
+        // Set materials - load only the first one
+        const materials = materialsResp.data.materials || [];
+        if (materials.length > 0) {
+          setCurrentMaterial(materials[0]);
+          setMaterialContent(materials[0].content);
+        }
+
+        // Auto-trigger suggestion panel if any question has saved analysis
+        const hasAnalysis = questionsData.some((q: AIResultType) => q.ai_validation_result && Object.keys(q.ai_validation_result).length > 0);
+        if (hasAnalysis) {
+          setSuggestion("completed");
+          setHasExistingAnalysis(true);
+        }
       } catch (error) {
         // Only show error toast for non-auth errors
         if (authToken === null) {
@@ -172,232 +344,11 @@ export default function AnalisisAIPage() {
         }
       } finally {
         setLoadingPage(false);
-        setLoadingMaterials(false);
       }
     };
 
     fetchData();
-  }, [authToken, projectId, router, refreshMaterials]);
-
-  const handleMaterialSubmit = async () => {
-    if (!authToken || !questions.length || !selectedMaterial) return;
-
-    setLoadingSuggestion(true);
-
-    try {
-      // First upload the material
-      const materialRes = await AxiosInstance.post(
-        `/projects/${projectId}/materials`,
-        { content: selectedMaterial },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-
-      if (!materialRes.data.status) {
-        throw new Error(
-          materialRes.data.message || "Failed to upload material"
-        );
-      }
-
-      // Add a small delay to ensure the material is processed
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Then validate each question with the uploaded material
-      const validationPromises = questions.map(async (question) => {
-        try {
-          const response = await AxiosInstance.post(
-            `/question/${question.id}/validate`,
-            null,
-            {
-              headers: { Authorization: `Bearer ${authToken}` },
-            }
-          );
-
-          // The validation results are in response.data.data
-          const validationData = response.data.data; // Access the data property
-
-          return {
-            data: {
-              status: true,
-              question: {
-                ...question,
-                id: question.id,
-                text: question.text,
-                options: question.options,
-                kesimpulan_validitas: validationData.kesimpulan_validitas || "Tidak Valid",
-                skor: validationData.skor || {
-                  kesesuaian_tujuan: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
-                  kesesuaian_indikator: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
-                  kedalaman_kognitif: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
-                  kejelasan_perumusan: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
-                  kesesuaian_bentuk: { skor: 0, penjelasan: "Validasi gagal dilakukan" },
-                  kesesuaian_materi: { skor: 0, penjelasan: "Validasi gagal dilakukan" }
-                },
-                rata_rata_skor: validationData.rata_rata_skor || 0,
-                note: validationData.note || null,
-                bloom_taxonomy: validationData.bloom_taxonomy || null,
-                ai_suggestion_question:
-                  validationData.ai_suggestion_question || null,
-                ai_suggestion_options:
-                  validationData.ai_suggestion_options || [],
-                showSuggestion: false,
-              },
-            },
-          };
-        } catch (error) {
-          console.error(`Error validating question ${question.id}:`, error);
-          return {
-            data: {
-              status: false,
-              question: {
-                ...question,
-                id: question.id, // Ensure ID is preserved
-                is_valid: false,
-                note: "Validasi gagal dilakukan",
-                text: question.text,
-                skor: {
-                  kesesuaian_tujuan: {
-                    skor: 0,
-                    penjelasan: "Validasi gagal dilakukan",
-                  },
-                  kesesuaian_indikator: {
-                    skor: 0,
-                    penjelasan: "Validasi gagal dilakukan",
-                  },
-                  kedalaman_kognitif: {
-                    skor: 0,
-                    penjelasan: "Validasi gagal dilakukan",
-                  },
-                  kejelasan_perumusan: {
-                    skor: 0,
-                    penjelasan: "Validasi gagal dilakukan",
-                  },
-                  kesesuaian_bentuk: {
-                    skor: 0,
-                    penjelasan: "Validasi gagal dilakukan",
-                  },
-                  kesesuaian_materi: {
-                    skor: 0,
-                    penjelasan: "Validasi gagal dilakukan",
-                  },
-                },
-                kesimpulan_validitas: "Tidak Valid" as const,
-                rata_rata_skor: 0,
-                bloom_taxonomy: null,
-                ai_suggestion_question: null,
-                ai_suggestion_options: [],
-                showSuggestion: false,
-              },
-            },
-          };
-        }
-      });
-
-      const validationResults = await Promise.all(validationPromises);
-
-      // Ensure each question has a unique ID and proper structure
-      const updatedQuestions = validationResults.map((res) => {
-        const question = res.data.question;
-        return {
-          ...question,
-          id: question.id, // Ensure ID is preserved
-          showSuggestion: false,
-        };
-      });
-
-      setQuestions(updatedQuestions);
-      setSuggestion("completed");
-      toast.success("Analisis dengan materi berhasil dilakukan");
-    } catch (err) {
-      console.error("Gagal menganalisis dengan materi:", err);
-      toast.error("Gagal menganalisis dengan materi ajar");
-      setSuggestion(null);
-      setSelectedMaterial("");
-    } finally {
-      setLoadingSuggestion(false);
-    }
-  };
-
-  const handleMaterialAnalysis = async (material: MaterialType) => {
-    setCurrentMaterial(material);
-    setLoadingSuggestion(true);
-
-    try {
-      // Then validate each question with the material
-      const validationPromises = questions.map(async (question) => {
-      try {
-        const response = await AxiosInstance.post(
-          `/question/${question.id}/validate`,
-          null,
-          {
-            headers: { Authorization: `Bearer ${authToken}` },
-          }
-        );
-
-        const validationData = response.data.data;
-        return {
-          data: {
-            status: true,
-            question: {
-              ...question,
-              id: question.id,
-              text: question.text,
-              options: question.options,
-              kesimpulan_validitas: validationData.kesimpulan_validitas || "Tidak Valid",
-              skor: validationData.skor || defaultScores,
-              rata_rata_skor: validationData.rata_rata_skor || 0,
-              note: validationData.note || null,
-              bloom_taxonomy: validationData.bloom_taxonomy || null,
-              ai_suggestion_question: validationData.ai_suggestion_question || null,
-              ai_suggestion_options: validationData.ai_suggestion_options || [],
-              showSuggestion: false,
-            },
-          },
-        };
-      } catch (error) {
-        console.error(`Error validating question ${question.id}:`, error);
-        return {
-          data: {
-            status: false,
-            question: {
-              ...question,
-              id: question.id,
-              is_valid: false,
-              note: "Validasi gagal dilakukan",
-              text: question.text,
-              skor: defaultScores,
-              kesimpulan_validitas: "Tidak Valid" as const,
-              rata_rata_skor: 0,
-              bloom_taxonomy: null,
-              ai_suggestion_question: null,
-              ai_suggestion_options: [],
-              showSuggestion: false,
-            },
-          },
-        };
-      }
-    });
-
-    const validationResults = await Promise.all(validationPromises);
-    const updatedQuestions = validationResults.map((res) => ({
-      ...res.data.question,
-      id: res.data.question.id,
-      showSuggestion: false,
-    }));
-
-    setQuestions(updatedQuestions);
-    setSuggestion("completed");
-    toast.success("Analisis ulang berhasil dilakukan");
-    } catch (err) {
-      console.error("Gagal menganalisis:", err);
-      toast.error("Gagal menganalisis ulang dengan materi");
-    } finally {
-      setLoadingSuggestion(false);
-    }
-  };
+  }, [authToken, projectId, router]);
 
   if (loadingPage) return <Loader />;
 
@@ -405,67 +356,54 @@ export default function AnalisisAIPage() {
     <div className="flex justify-center">
       <div className="w-full max-w-3xl">
         <div className="mb-6">
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium mb-4">Materi Ajar</h3>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium mb-4">Materi Ajar</h3>
 
-              <div className="space-y-4 mb-4">
+            {!currentMaterial && !isEditingMaterial ? (
+              <div className="space-y-4">
                 <textarea
                   className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   rows={4}
                   placeholder="Masukkan materi pembelajaran yang berkaitan dengan soal..."
-                  value={selectedMaterial}
-                  onChange={(e) => setSelectedMaterial(e.target.value)}
+                  value={materialContent}
+                  onChange={(e) => setMaterialContent(e.target.value)}
                   disabled={loadingSuggestion}
                 />
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleMaterialSubmit}
-                    className={`flex items-center px-4 py-2 rounded-md text-base font-medium text-white 
-                      ${
-                        questions.length === 0 || !selectedMaterial
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : loadingSuggestion
-                          ? "bg-yellow-400 cursor-wait"
-                          : "bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
-                      }`}
-                    disabled={questions.length === 0 || !selectedMaterial || loadingSuggestion}
-                  >
-                    <DocumentIcon className="h-6 w-6 mr-3" />
-                    {loadingSuggestion ? "Menganalisis..." : "Simpan & Analisis"}
-                  </button>
-                </div>
-              </div>            {/* Material List */}
-            {loadingMaterials ? (
-              <div className="flex justify-center py-4">
-                <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-transparent rounded-full"></div>
-              </div>
-            ) : materials.length > 0 ? (
-              <div className="space-y-3">
-                {materials.map((material) => (
-                  <div
-                    key={material.id}
-                    className={`flex items-center justify-between p-3 rounded-md ${
-                      currentMaterial?.id === material.id ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                <button
+                  onClick={saveMaterial}
+                  className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-base font-medium text-white 
+                      ${questions.length === 0 || !materialContent.trim()
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : loadingSuggestion
+                        ? "bg-yellow-400 cursor-wait"
+                        : "bg-yellow-500 hover:bg-yellow-600 cursor-pointer"
                     }`}
-                  >
-                    <div className="flex-1 mr-4">
-                      <div className="font-medium text-gray-700 mb-1">Materi {material.id}</div>
-                      <div className="text-sm text-gray-600 line-clamp-2">{material.content}</div>
-                    </div>
+                  disabled={questions.length === 0 || !materialContent.trim() || loadingSuggestion}
+                  style={{
+                    backgroundColor: !materialContent.trim() ? undefined : "#00a1a9"
+                  }}
+                >
+                  <DocumentIcon className="h-6 w-6 mr-3" />
+                  {loadingSuggestion ? "Menyimpan..." : "Simpan Materi"}
+                </button>
+              </div>
+            ) : currentMaterial && !isEditingMaterial ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-medium text-gray-700">Materi Saat Ini</h4>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleMaterialAnalysis(material)}
-                        className={`p-2 transition-colors ${
-                          currentMaterial?.id === material.id
-                            ? 'text-blue-600 hover:bg-blue-50'
-                            : 'text-gray-400'
-                        }`}
+                        onClick={() => {
+                          setIsEditingMaterial(true);
+                        }}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                         disabled={loadingSuggestion}
                       >
-                        <ArrowPathIcon className="h-5 w-5" />
+                        <PencilIcon className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => deleteMaterial(material.id)}
+                        onClick={deleteMaterial}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                         disabled={loadingSuggestion}
                       >
@@ -473,14 +411,62 @@ export default function AnalisisAIPage() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  <p className="text-gray-700 whitespace-pre-wrap text-sm">
+                    {currentMaterial.content}
+                  </p>
+                </div>
+                <button
+                  onClick={analyzeMaterial}
+                  className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-base font-medium text-white 
+                      ${questions.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : loadingSuggestion
+                        ? "bg-gray-400 cursor-wait"
+                        : "cursor-pointer"
+                    }`}
+                  style={{
+                    backgroundColor: questions.length === 0 || loadingSuggestion ? undefined : "#00a1a9"
+                  }}
+                  disabled={questions.length === 0 || loadingSuggestion}
+                >
+                  <SparklesIcon className="h-6 w-6 mr-3" />
+                  {loadingSuggestion ? "Menganalisis..." : (hasExistingAnalysis ? "Analisis Ulang" : "Analisis Materi")}
+                </button>
               </div>
-            ) : (
-              <p className="text-sm text-gray-500 text-center py-4">
-                Belum ada materi ajar. Silakan masukkan materi untuk menganalisis
-                soal.
-              </p>
-            )}
+            ) : isEditingMaterial && currentMaterial ? (
+              <div className="space-y-4">
+                <textarea
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  rows={4}
+                  value={materialContent}
+                  onChange={(e) => setMaterialContent(e.target.value)}
+                  disabled={loadingSuggestion}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveMaterial}
+                    className={`flex-1 px-4 py-2 rounded-md text-base font-medium text-white ${!materialContent.trim() || loadingSuggestion
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700 cursor-pointer"
+                      }`}
+                    disabled={!materialContent.trim() || loadingSuggestion}
+
+                  >
+                    {loadingSuggestion ? "Menyimpan..." : "Simpan Perubahan"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingMaterial(false);
+                      setMaterialContent(currentMaterial.content);
+                    }}
+                    className="flex-1 px-4 py-2 rounded-md text-base font-medium bg-gray-400 hover:bg-gray-500 text-white cursor-pointer"
+                    disabled={loadingSuggestion}
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {questions.length === 0 && (
               <p className="text-xs text-red-500 mt-4">
@@ -488,12 +474,12 @@ export default function AnalisisAIPage() {
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              Masukkan materi pembelajaran yang berkaitan dengan soal untuk menganalisis kesesuaian soal dengan materi
+              Masukkan atau kelola satu materi pembelajaran untuk menganalisis kesesuaian soal dengan materi
             </p>
           </div>
 
           {loadingSuggestion && (
-            <div className="mb-6 flex justify-center items-center gap-2 p-4 bg-blue-50 rounded-lg">
+            <div className="mt-4 flex justify-center items-center gap-2 p-4 bg-blue-50 rounded-lg">
               <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
               <span className="text-blue-600">Menganalisis materi...</span>
             </div>
@@ -506,221 +492,214 @@ export default function AnalisisAIPage() {
               key={q.id}
               className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden"
             >
-              <div
-                className={`grid grid-cols-${
-                  !suggestion ? 1 : 2
-                } divide-x divide-gray-200`}
-              >
-                {/* Question Section */}
-                <div className="p-4">
-                  <h3 className="text-lg text-[#00A1A9] font-medium mb-2">
-                    Soal #{index + 1}
-                  </h3>
-                  <div
-                    className="prose font-bold"
-                    dangerouslySetInnerHTML={{ __html: q.text }}
-                  />
-                  {q.options && q.options.length > 0 && (
-                    <div className="mt-3 pt-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        Pilihan Jawaban:
-                      </p>
-                      <div className="space-y-1">
-                        {q.options.map((option) => (
-                          <div key={option.id} className="text-sm">
-                            {option.option_code}. {option.text}
+              {/* Question Header with Dropdown Button */}
+              <div className="p-4 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg text-[#00A1A9] font-medium">
+                      Soal #{index + 1}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {suggestion === "completed" && (
+                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${q.kesimpulan_validitas === "Valid"
+                          ? "bg-green-100 text-green-700"
+                          : q.kesimpulan_validitas === "Sebagian Valid"
+                            ? "bg-yellow-100 text-yellow-700"
+                          : q.kesimpulan_validitas == null
+                            ? "bg-gray-100 text-gray-700"
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                        {q.kesimpulan_validitas ? q.kesimpulan_validitas : 'belum divalidasi'}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setExpandedQuestions(prev => ({
+                          ...prev,
+                          [q.id]: !prev[q.id]
+                        }));
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded-md transition-colors"
+                      title={expandedQuestions[q.id] ? "Tutup" : "Buka"}
+                    >
+                      <ChevronDownIcon className={`h-5 w-5 text-gray-600 transform transition-transform ${expandedQuestions[q.id] ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Question Content - Expandable Vertical Layout */}
+              {expandedQuestions[q.id] && (
+                <div className="flex flex-col">
+                  {/* Question Section */}
+                  <div className="p-4 border-b border-gray-200">
+                    <div
+                      className="prose font-bold mb-3"
+                      dangerouslySetInnerHTML={{ __html: q.showSuggestion && q.ai_suggestion_question ? q.ai_suggestion_question : q.text }}
+                    />
+                    {q.options && q.options.length > 0 && (
+                      <div className="mt-3 pt-3">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Pilihan Jawaban:
+                        </p>
+                        <div className="space-y-1">
+                          {(q.showSuggestion && q.ai_suggestion_options && q.ai_suggestion_options.length > 0 ? q.ai_suggestion_options : q.options).map((option, idx) => (
+                            <div key={`${q.id}-option-${idx}`} className={`text-sm ${option.is_right ? 'font-bold' : ''}`}>
+                              {option.option_code}. {option.text}
+                              {option.is_right ? <span className="text-green-600 ml-2">(Kunci Jawaban)</span> : null}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Analysis Section - Show only if suggestion exists and not applied */}
+                  {suggestion && q.ai_validation_result  && !appliedSuggestions[q.id] && (
+                    <div className="p-4 bg-gray-50">
+                      <div className="flex justify-between items-start mb-4">
+                        <h4 className="text-lg font-medium">Hasil Analisis</h4>
+                        <div>
+                          {q.ai_suggestion_question && !appliedSuggestions[q.id] && (
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setQuestions(
+                                    questions.map((question) =>
+                                      question.id === q.id
+                                        ? { ...question, showSuggestion: !question.showSuggestion }
+                                        : question
+                                    )
+                                  );
+                                }}
+                                className={`px-2 py-1 text-xs rounded transition-colors font-semibold ${
+                                  q.showSuggestion
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                              >
+                                {q.showSuggestion ? "Tutup Saran" : "Lihat Saran"}
+                              </button>
+                              {q.showSuggestion && !appliedSuggestions[q.id] && (
+                                <button
+                                  onClick={() => applySuggestions(q)}
+                                  className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                >
+                                  Terapkan Saran
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {appliedSuggestions[q.id] && (
+                            <span className="text-xs text-green-600">
+                              ✓ Saran diterapkan
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Validity Status */}
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">
+                            Status Validitas:
+                          </span>
+                          
+                          <p
+                            className={`text-sm mt-1 font-medium ${q.kesimpulan_validitas === "Valid"
+                              ? "text-green-600"
+                              : q.kesimpulan_validitas === "Sebagian Valid"
+                                ? "text-yellow-600"
+                                : "text-red-600"
+                              }`}
+                          >
+                            {q.kesimpulan_validitas}
+                          </p>
+                        </div>
+
+                        {/* Average Score */}
+                        {typeof q.rata_rata_skor === "number" && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">
+                              Rata-rata Skor:
+                            </span>
+                            <p className="text-sm mt-1">
+                              {q.rata_rata_skor?.toFixed(2) || "0.00"}
+                            </p>
                           </div>
-                        ))}
+                        )}
+
+                        {/* Detailed Scores */}
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">
+                            Skor Penilaian:
+                          </span>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm text-justify">
+                              Kesesuaian Tujuan: {q.skor.kesesuaian_tujuan.skor}{" "}
+                              <br />
+                              {q.skor.kesesuaian_tujuan.penjelasan}
+                            </p>
+                            <p className="text-sm text-justify">
+                              Kesesuaian Indikator:{" "}
+                              {q.skor.kesesuaian_indikator.skor} <br />
+                              {q.skor.kesesuaian_indikator.penjelasan}
+                            </p>
+                            <p className="text-sm text-justify">
+                              Kedalaman Kognitif: {q.skor.kedalaman_kognitif.skor}{" "}
+                              <br />
+                              {q.skor.kedalaman_kognitif.penjelasan}
+                            </p>
+                            <p className="text-sm text-justify">
+                              Kejelasan Perumusan:{" "}
+                              {q.skor.kejelasan_perumusan?.skor} <br />
+                              {q.skor.kejelasan_perumusan.penjelasan}
+                            </p>
+                            <p className="text-sm text-justify">
+                              Kesesuaian Bentuk: {q.skor.kesesuaian_bentuk.skor}{" "}
+                              <br />
+                              {q.skor.kesesuaian_bentuk.penjelasan}
+                            </p>
+                            <p className="text-sm text-justify">
+                              Kesesuaian dengan Materi:{" "}
+                              {q.skor.kesesuaian_materi.skor} <br />
+                              {q.skor.kesesuaian_materi.penjelasan}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Bloom Taxonomy */}
+                        {q.bloom_taxonomy && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">
+                              Tingkatan Bloom:
+                            </span>
+                            <p className="text-sm mt-1">{q.bloom_taxonomy}</p>
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {q.note && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">
+                              Catatan:
+                            </span>
+                            <p className="text-sm mt-1 whitespace-pre-wrap text-justify">
+                              {q.note}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
-                {/* Analysis Section */}
-                {(suggestion === "completed" && !appliedSuggestions[q.id]) && (
-                  <div className="p-4 bg-gray-50">
-                    <div className="flex justify-between items-start mb-4">
-                      <h4 className="text-lg font-medium">Hasil Analisis</h4>
-                      <div>
-                        {q.ai_suggestion_question && !q.showSuggestion && !appliedSuggestions[q.id] && (
-                          <button
-                            onClick={() => {
-                              setQuestions(
-                                questions.map((question) =>
-                                  question.id === q.id
-                                    ? { ...question, showSuggestion: true }
-                                    : question
-                                )
-                              );
-                            }}
-                            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Lihat Saran
-                          </button>
-                        )}
-                        {appliedSuggestions[q.id] && (
-                          <span className="text-xs text-green-600">
-                            ✓ Saran diterapkan
-                          </span>
-                        )}
-                        {q.showSuggestion && q.ai_suggestion_question && !appliedSuggestions[q.id] && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setQuestions(
-                                  questions.map((question) =>
-                                    question.id === q.id
-                                      ? { ...question, showSuggestion: false }
-                                      : question
-                                  )
-                                );
-                            }}
-                            className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                          >
-                            Tutup Saran
-                          </button>
-                            <button
-                              onClick={() => applySuggestions(q)}
-                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            >
-                              Terapkan Saran
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {/* Validity Status */}
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">
-                          Status Validitas:
-                        </span>
-                        <p
-                          className={`text-sm mt-1 font-medium ${
-                            q.kesimpulan_validitas === "Valid"
-                              ? "text-green-600"
-                              : q.kesimpulan_validitas === "Sebagian Valid"
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {q.kesimpulan_validitas}
-                        </p>
-                      </div>
-
-                      {/* Average Score */}
-                      {typeof q.rata_rata_skor === "number" && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">
-                            Rata-rata Skor:
-                          </span>
-                          <p className="text-sm mt-1">
-                            {q.rata_rata_skor?.toFixed(2) || "0.00"}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Detailed Scores */}
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">
-                          Skor Penilaian:
-                        </span>
-                        <div className="mt-2 space-y-1">
-                          <p className="text-sm text-justify">
-                            Kesesuaian Tujuan: {q.skor.kesesuaian_tujuan.skor}{" "}
-                            <br />
-                            {q.skor.kesesuaian_tujuan.penjelasan}
-                          </p>
-                          <p className="text-sm text-justify">
-                            Kesesuaian Indikator:{" "}
-                            {q.skor.kesesuaian_indikator.skor} <br />
-                            {q.skor.kesesuaian_indikator.penjelasan}
-                          </p>
-                          <p className="text-sm text-justify">
-                            Kedalaman Kognitif: {q.skor.kedalaman_kognitif.skor}{" "}
-                            <br />
-                            {q.skor.kedalaman_kognitif.penjelasan}
-                          </p>
-                          <p className="text-sm text-justify">
-                            Kejelasan Perumusan:{" "}
-                            {q.skor.kejelasan_perumusan?.skor} <br />
-                            {q.skor.kejelasan_perumusan.penjelasan}
-                          </p>
-                          <p className="text-sm text-justify">
-                            Kesesuaian Bentuk: {q.skor.kesesuaian_bentuk.skor}{" "}
-                            <br />
-                            {q.skor.kesesuaian_bentuk.penjelasan}
-                          </p>
-                          <p className="text-sm text-justify">
-                            Kesesuaian dengan Materi:{" "}
-                            {q.skor.kesesuaian_materi.skor} <br />
-                            {q.skor.kesesuaian_materi.penjelasan}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Bloom Taxonomy */}
-                      {q.bloom_taxonomy && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">
-                            Tingkatan Bloom:
-                          </span>
-                          <p className="text-sm mt-1">{q.bloom_taxonomy}</p>
-                        </div>
-                      )}
-
-                      {/* Notes */}
-                      {q.note && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">
-                            Catatan:
-                          </span>
-                          <p className="text-sm mt-1 whitespace-pre-wrap text-justify">
-                            {q.note}
-                          </p>
-                        </div>
-                      )}
-
-                      {q.ai_suggestion_question && q.showSuggestion && (
-                        <>
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">
-                              Saran Perbaikan Soal:
-                            </span>
-                            <p className="text-sm mt-1 text-blue-600 whitespace-pre-wrap text-justify">
-                              {q.ai_suggestion_question}
-                            </p>
-                          </div>
-                          {q.ai_suggestion_options && (
-                            <div>
-                              <span className="text-sm font-medium text-gray-700">
-                                Saran Perbaikan Opsi:
-                              </span>
-                              <div className="mt-1 space-y-1">
-                                {q.ai_suggestion_options.map(
-                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                  (opt: any, idx: number) => (
-                                    <p
-                                      key={idx}
-                                      className="text-sm text-blue-600 text-justify"
-                                    >
-                                      {opt.option_code}. {opt.text}{" "}
-                                      {opt.is_right && "(Kunci)"}
-                                    </p>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           ))}
         </div>
+
+
       </div>
     </div>
   );

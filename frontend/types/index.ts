@@ -6,12 +6,17 @@ export interface UserType {
 }
 
 export interface AppProviderType {
-  login: (email: string, password: string) => Promise<void>,
-  register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>,
-  isLoading: boolean,
-  authToken: string | null,
-  setIsLoading: (loading: boolean) => void,
-  logout: () => void,
+  login: (email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    password_confirmation: string
+  ) => Promise<void>;
+  isLoading: boolean;
+  authToken: string | null;
+  setIsLoading: (loading: boolean) => void;
+  logout: () => void;
   user: UserType | null; // Added user to AppProviderType
 }
 
@@ -48,17 +53,17 @@ export type QuestionResult = {
 };
 
 export type QuestionJawaban = {
-    id: number;
+  id: number;
 };
 
 export type Project = {
-  nama_ujian: string,
-  mata_pelajaran?: string,
-  kelas?: string,
-  semester?: string,
-  capaian_pembelajaran?: string,
-  indikator_ketercapaian_pembelajaran?: string,
-  public_id: string,
+  nama_ujian: string;
+  mata_pelajaran?: string;
+  kelas?: string;
+  semester?: string;
+  capaian_pembelajaran?: string;
+  indikator_ketercapaian_pembelajaran?: string;
+  public_id: string;
 };
 
 // --- Definisi Tipe untuk Hasil Analisis (sesuai output Backend) ---
@@ -81,10 +86,12 @@ export type AnalysisResults = {
   tingkat_kesukaran: { [key: number]: number | null };
   daya_beda: { [key: number]: number | null };
   kualitas_pengecoh: {
-    [questionId: number]: {
-      options: QuestionDistractorAnalysis;
-      summary_message: string;
-    } | { summary_message: string; options: [] };
+    [questionId: number]:
+      | {
+          options: QuestionDistractorAnalysis;
+          summary_message: string;
+        }
+      | { summary_message: string; options: [] };
   };
   // Tambahan dari backend jika perlu ditampilkan
   k_items?: number;
@@ -108,35 +115,40 @@ export type AIOptionSuggestion = {
 
 type SkorAnalyze = {
   kesesuaian_tujuan: {
-    skor: number,
-    penjelasan: string,
-  }; 
+    skor: number;
+    penjelasan: string;
+  };
   kesesuaian_indikator: {
-    skor: number,
-    penjelasan: string,
+    skor: number;
+    penjelasan: string;
   };
   kedalaman_kognitif: {
-    skor: number,
-    penjelasan: string,
+    skor: number;
+    penjelasan: string;
   };
   kejelasan_perumusan: {
-    skor: number,
-    penjelasan: string,
+    skor: number;
+    penjelasan: string;
   };
   kesesuaian_bentuk: {
-    skor: number,
-    penjelasan: string,
+    skor: number;
+    penjelasan: string;
   };
   kesesuaian_materi: {
-    skor: number,
-    penjelasan: string,
+    skor: number;
+    penjelasan: string;
   };
-}
+};
 
 export type AIResultType = {
   id: number;
   text: string;
-  options?: { id?: number; text: string; option_code?: string }[];
+  options?: {
+    id?: number;
+    is_right: boolean;
+    text: string;
+    option_code?: string;
+  }[];
   ai_suggestion_question?: string | null;
   ai_suggestion_options?: AIOptionSuggestion[] | null;
   is_valid?: boolean;
@@ -146,4 +158,24 @@ export type AIResultType = {
   rata_rata_skor: number | null;
   bloom_taxonomy?: string | null;
   showSuggestion?: boolean;
+  
+  ai_validation_result?: {
+    id: number;
+    text: string;
+    options?: {
+      id?: number;
+      is_right: boolean;
+      text: string;
+      option_code?: string;
+    }[];
+    ai_suggestion_question?: string | null;
+    ai_suggestion_options?: AIOptionSuggestion[] | null;
+    is_valid?: boolean;
+    note?: string | null;
+    skor: SkorAnalyze;
+    kesimpulan_validitas: "Valid" | "Sebagian Valid" | "Tidak Valid";
+    rata_rata_skor: number | null;
+    bloom_taxonomy?: string | null;
+    showSuggestion?: boolean;
+  };
 };

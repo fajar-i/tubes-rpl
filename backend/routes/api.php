@@ -33,6 +33,7 @@ Route::middleware(['api', 'auth:sanctum'])->group(
         Route::delete('/materials/{material}', [MaterialController::class, 'destroy']);
 
         Route::post('/question/{question}/validate', [QuestionController::class, 'validateQuestion']);
+        Route::post('/question/{question}/retryvalidate', [QuestionController::class, 'retryValidateQuestion']);
         Route::put('/rightOption/{option}', [OptionController::class, 'setIsRight']);
 
         Route::get('/projects/{project}/result', [ResultController::class, 'getAnalisis']);

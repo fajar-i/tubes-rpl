@@ -16,6 +16,7 @@ return new class extends Migration
             $table->text('text');
             $table->foreignId("project_id")->constrained()->onDelete('cascade');
             $table->timestamps();
+            $table->text('ai_validation_result')->nullable();
         });
     }
 

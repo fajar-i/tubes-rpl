@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\Question;
-use Illuminate\Http\Request;
-use App\Services\GeminiService;
 use App\Models\Material;
+use App\Services\GeminiService;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class QuestionController extends Controller
 {
@@ -68,82 +70,129 @@ class QuestionController extends Controller
             ], 400);
         }
 
-        $result = $this->gemini->validateQuestionWithBloom($question, $materi->content);
-        $decoded = json_decode($result, true);
+        if ($question->ai_validation_result != null) {
+            $result = $question->ai_validation_result;
+        } else {
+            $result = $this->gemini->validateQuestionWithBloom($question, $materi->content);
+            $decoded = json_decode($result, true);
 
-        if (!$decoded) {
-            return response()->json([
-                "status" => false,
-                "message" => "Format jawaban AI tidak valid",
-                "raw" => $result
-            ], 500);
+            if (!$decoded) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Format jawaban AI tidak valid",
+                    "raw" => $result
+                ], 500);
+            }
+
+            try {
+                // Kita simpan string mentah $result ke kolom baru
+                $question->update([
+                    'ai_validation_result' => $decoded
+                ]);
+            } catch (Exception $e) {
+                Log::error('Gagal update validasi soal: ' . $e->getMessage());
+
+                return response()->json([
+                    "status" => false,
+                    "message" => "Gagal menyimpan hasil analisis ke database.",
+                    "error" => $e->getMessage()
+                ], 500);
+            }
         }
 
-        // 🔹 Tidak menyimpan ke database — hanya return hasil analisis
         return response()->json([
             "status" => true,
             "message" => "Analisis validitas soal berhasil",
             "data" => $decoded
         ]);
     }
+    public function retryValidateQuestion(Request $request, Question $question)
+    {
+        try {
+            $materi = Material::where('project_id', $question->project_id)->first();
 
+            if (!$materi) {
+                Log::warning('Materi tidak ditemukan untuk project: ' . $question->project_id);
+                return response()->json([
+                    "status" => false,
+                    "message" => "Materi belum tersedia untuk project ini"
+                ], 400);
+            }
 
-    // Gak jadi di pake
-    // public function applySuggestion(Request $request, Question $question)
-    // {
-    //     $request->validate([
-    //         'action' => 'required|in:accept,reject'
-    //     ]);
+            Log::info('Starting retryValidateQuestion for question: ' . $question->id);
 
-    //     if ($request->action === 'accept' && $question->ai_suggestion) {
-    //         // update text soal dengan saran AI
-    //         $question->update([
-    //             "text"   => $question->ai_suggestion,
-    //             "status" => "revised"
-    //         ]);
+            $result = $this->gemini->validateQuestionWithBloom($question, $materi->content);
 
-    //         return response()->json([
-    //             "status" => true,
-    //             "message" => "Saran AI diterima & soal diperbarui",
-    //             "question" => $question
-    //         ]);
-    //     }
+            if ($result === null) {
+                Log::error('Gemini returned null result for question: ' . $question->id);
+                return response()->json([
+                    "status" => false,
+                    "message" => "AI service gagal memproses validasi",
+                    "error" => "Gemini service returned null"
+                ], 500);
+            }
 
-    //     if ($request->action === 'reject') {
-    //         $question->update([
-    //             "status" => "validated" // tetap valid tapi tanpa revisi
-    //         ]);
+            Log::info('Raw Gemini response: ' . substr($result, 0, 500)); // Log first 500 chars
 
-    //         return response()->json([
-    //             "status" => true,
-    //             "message" => "Saran AI ditolak, soal tetap sama",
-    //             "question" => $question
-    //         ]);
-    //     }
+            $decoded = json_decode($result, true);
 
-    //     return response()->json([
-    //         "status" => false,
-    //         "message" => "Tidak ada saran AI untuk diterapkan"
-    //     ], 400);
-    // }
+            if (!$decoded) {
+                Log::error('JSON decode failed for question: ' . $question->id);
+                Log::error('Raw response: ' . $result);
+                return response()->json([
+                    "status" => false,
+                    "message" => "Format jawaban AI tidak valid",
+                    "raw" => $result,
+                    "error" => "JSON decode failed: " . json_last_error_msg()
+                ], 500);
+            }
 
+            Log::info('Decoded result structure: ' . json_encode(array_keys($decoded)));
 
-    // public function show(Question $question)
-    // {
-    //     $question = $question->with('options')->get();
-    //     return response()->json([
-    //         "status" => true,
-    //         "message" => "question data found",
-    //         "question" => $question
-    //     ]);
-    // }
+            try {
+                $question->update([
+                    'ai_validation_result' => $decoded
+                ]);
+            } catch (Exception $e) {
+
+                return response()->json([
+                    "status" => false,
+                    "message" => "Gagal menyimpan hasil analisis ke database.",
+                    "error" => $e->getMessage()
+                ], 500);
+            }
+
+            return response()->json([
+                "status" => true,
+                "message" => "Analisis validitas soal berhasil",
+                "data" => $decoded
+            ]);
+        } catch (Exception $e) {
+            Log::error('Unexpected error in retryValidateQuestion: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            return response()->json([
+                "status" => false,
+                "message" => "Terjadi kesalahan yang tidak terduga",
+                "error" => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function update(Request $request, Question $question)
     {
         $request->validate([
-            "text" => "required"
+            "text" => "required",
+            "ai_validation_result" => "nullable",
         ]);
-        $data["text"] = isset($request->text) ? $request->text : $question->text;
+
+        $data = [];
+        $data["text"] = $request->text;
+
+        // Handle ai_validation_result - allow null or array/object
+        if ($request->has('ai_validation_result')) {
+            $data["ai_validation_result"] = $request->ai_validation_result;
+        }
 
         $question->update($data);
         return response()->json([
