@@ -36,6 +36,7 @@ export type OptionForm = {
 export type QuestionForm = {
   id: number;
   text: string;
+  bloom_taxonomy?: string;
   options: OptionForm[];
 };
 

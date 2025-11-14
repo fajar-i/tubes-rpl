@@ -6,7 +6,7 @@ import { useMyAppHook } from "@/context/AppProvider";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { AxiosInstance } from "@/lib/axios";
-import { ArrowPathIcon, DocumentIcon, TrashIcon, PencilIcon, SparklesIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { DocumentIcon, TrashIcon, PencilIcon, SparklesIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { AIResultType, MaterialType } from "@/types";
 import useTitle from "@/hooks/useTitle";
 
@@ -39,19 +39,6 @@ export default function AnalisisAIPage() {
 
   const applySuggestions = async (question: AIResultType) => {
     try {
-      // Create updated question object with suggestion applied
-      const updatedQuestion = {
-        ...question,
-        text: question.ai_suggestion_question || question.text,
-        showSuggestion: false,
-        // Keep all the existing analysis data
-        kesimpulan_validitas: question.kesimpulan_validitas,
-        skor: question.skor,
-        rata_rata_skor: question.rata_rata_skor,
-        bloom_taxonomy: question.bloom_taxonomy,
-        note: question.note,
-      };
-
       // Prepare options for update
       let optionsToUpdate = question.options || [];
       if (
@@ -65,11 +52,12 @@ export default function AnalisisAIPage() {
         }));
       }
 
-      // Update question text and options in database
+      // Update question text, bloom_taxonomy, and options in database
       await AxiosInstance.put(
         `/questions/${question.id}`,
         {
           text: question.ai_suggestion_question || question.text,
+          bloom_taxonomy: question.ai_validation_result?.bloom_taxonomy || question.bloom_taxonomy,
           ai_validation_result: null,
           options: optionsToUpdate,
         },
@@ -91,7 +79,6 @@ export default function AnalisisAIPage() {
             skor: savedAnalysis.skor || defaultScores,
             rata_rata_skor: savedAnalysis.rata_rata_skor || 0,
             note: savedAnalysis.note || null,
-            bloom_taxonomy: savedAnalysis.bloom_taxonomy || null,
             ai_suggestion_question: savedAnalysis.ai_suggestion_question || null,
             ai_suggestion_options: savedAnalysis.ai_suggestion_options || [],
           };
@@ -281,7 +268,6 @@ export default function AnalisisAIPage() {
             skor: savedAnalysis.skor || defaultScores,
             rata_rata_skor: savedAnalysis.rata_rata_skor || 0,
             note: savedAnalysis.note || null,
-            bloom_taxonomy: savedAnalysis.bloom_taxonomy || null,
             ai_suggestion_question: savedAnalysis.ai_suggestion_question || null,
             ai_suggestion_options: savedAnalysis.ai_suggestion_options || [],
           };
@@ -324,12 +310,11 @@ export default function AnalisisAIPage() {
             return {
               ...q,
               showSuggestion: false,
-              // Load saved analysis data
+              // Load saved analysis data but keep original bloom_taxonomy from question
               kesimpulan_validitas: savedAnalysis.kesimpulan_validitas || "Tidak Valid",
               skor: savedAnalysis.skor || defaultScores,
               rata_rata_skor: savedAnalysis.rata_rata_skor || 0,
               note: savedAnalysis.note || null,
-              bloom_taxonomy: savedAnalysis.bloom_taxonomy || null,
               ai_suggestion_question: savedAnalysis.ai_suggestion_question || null,
               ai_suggestion_options: savedAnalysis.ai_suggestion_options || [],
             };
@@ -556,11 +541,21 @@ export default function AnalisisAIPage() {
                   {/* Question Section */}
                   <div className="p-4 border-b border-gray-200">
                     <div
-                      className={`prose mb-3 ${ // <-- Hapus font-bold dari sini
+                      className={`prose mb-3 whitespace-pre-wrap ${ // <-- Hapus font-bold dari sini
                         q.showSuggestion ? 'font-bold text-blue-600' : '' // <-- Tambahkan logic ini
                         }`}
                       dangerouslySetInnerHTML={{ __html: q.showSuggestion && q.ai_suggestion_question ? q.ai_suggestion_question : q.text }}
                     />
+                    {(q.bloom_taxonomy || q.ai_validation_result?.bloom_taxonomy) && (
+                      <div className={`text-sm mb-3 ${
+                        q.showSuggestion ? 'font-semibold text-blue-600' : 'text-gray-600'
+                      }`}>
+                        <span className="font-medium">Tingkatan Bloom: </span>
+                        {q.showSuggestion && q.ai_validation_result?.bloom_taxonomy 
+                          ? q.ai_validation_result.bloom_taxonomy 
+                          : q.bloom_taxonomy}
+                      </div>
+                    )}
                     {q.options && q.options.length > 0 && (
                       <div className="mt-3 pt-3">
                         <p className="text-sm font-medium text-gray-700 mb-2">
@@ -701,12 +696,12 @@ export default function AnalisisAIPage() {
                         </div>
 
                         {/* Bloom Taxonomy */}
-                        {q.bloom_taxonomy && (
+                        {q.ai_validation_result.bloom_taxonomy && (
                           <div>
                             <span className="text-sm font-medium text-gray-700">
                               Tingkatan Bloom:
                             </span>
-                            <p className="text-sm mt-1">{q.bloom_taxonomy}</p>
+                            <p className="text-sm mt-1">{q.ai_validation_result.bloom_taxonomy}</p>
                           </div>
                         )}
 

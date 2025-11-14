@@ -131,6 +131,29 @@ export default function FormPage() {
     }
   };
 
+  const handleBloomTaxonomyChange = async (qId: number, bloomValue: string) => {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === qId ? { ...q, bloom_taxonomy: bloomValue } : q))
+    );
+    try {
+      await AxiosInstance.post(
+        `/questions/${qId}`,
+        { text: questions.find(q => q.id === qId)?.text, bloom_taxonomy: bloomValue, _method: "PUT" },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      toast.success("Bloom Taxonomy tersimpan");
+    } catch (e) {
+      toast.error("Gagal menyimpan Bloom Taxonomy");
+      console.error(e);
+      fetchAllQuestions();
+    }
+  };
+
   const handleOptionBlur = async (
     qId: number,
     oId: number,
@@ -348,6 +371,24 @@ export default function FormPage() {
                     className="text-lg font-semibold whitespace-pre-wrap"
                   />
                 </div>
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tingkatan Bloom
+                </label>
+                <select
+                  value={q.bloom_taxonomy || ""}
+                  onChange={(e) => handleBloomTaxonomyChange(q.id, e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Pilih Tingkatan Bloom</option>
+                  <option value="C1 - Mengingat">C1 - Mengingat</option>
+                  <option value="C2 - Memahami">C2 - Memahami</option>
+                  <option value="C3 - Menerapkan">C3 - Menerapkan</option>
+                  <option value="C4 - Menganalisis">C4 - Menganalisis</option>
+                  <option value="C5 - Mengevaluasi">C5 - Mengevaluasi</option>
+                  <option value="C6 - Mencipta">C6 - Mencipta</option>
+                </select>
               </div>
               <ul className="list-none pl-3">
                 {q.options.map((opt, index) => (

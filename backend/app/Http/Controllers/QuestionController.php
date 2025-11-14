@@ -183,6 +183,7 @@ class QuestionController extends Controller
     {
         $request->validate([
             "text" => "required",
+            "bloom_taxonomy" => "nullable|string",
             "ai_validation_result" => "nullable",
             "options" => "nullable|array",
             "options.*.option_code" => "required|string",
@@ -192,6 +193,11 @@ class QuestionController extends Controller
 
         $data = [];
         $data["text"] = $request->text;
+        
+        // Handle bloom_taxonomy
+        if ($request->has('bloom_taxonomy')) {
+            $data["bloom_taxonomy"] = $request->bloom_taxonomy;
+        }
 
         // Handle ai_validation_result - allow null or array/object
         if ($request->has('ai_validation_result')) {
