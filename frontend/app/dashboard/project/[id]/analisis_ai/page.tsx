@@ -68,7 +68,7 @@ export default function AnalisisAIPage() {
       // Update question text and options in database
       await AxiosInstance.put(
         `/questions/${question.id}`,
-        { 
+        {
           text: question.ai_suggestion_question || question.text,
           ai_validation_result: null,
           options: optionsToUpdate,
@@ -258,14 +258,14 @@ export default function AnalisisAIPage() {
 
       setQuestions(updatedQuestions);
       setSuggestion("completed");
-      
+
       // Open all questions on first validation
       const newExpandedState: { [key: number]: boolean } = {};
       updatedQuestions.forEach((q) => {
         newExpandedState[q.id] = true;
       });
       setExpandedQuestions(newExpandedState);
-      
+
       // Refresh all questions from backend after validation
       const refreshResponse = await AxiosInstance.get(`/projects/${projectId}/questions`, {
         headers: { Authorization: `Bearer ${authToken}` },
@@ -524,9 +524,9 @@ export default function AnalisisAIPage() {
                   <div className="flex items-center gap-3">
                     {suggestion === "completed" && (
                       <span className={`text-xs font-semibold px-3 py-1 rounded-full ${q.kesimpulan_validitas === "Valid"
-                          ? "bg-green-100 text-green-700"
-                          : q.kesimpulan_validitas === "Sebagian Valid"
-                            ? "bg-yellow-100 text-yellow-700"
+                        ? "bg-green-100 text-green-700"
+                        : q.kesimpulan_validitas === "Sebagian Valid"
+                          ? "bg-yellow-100 text-yellow-700"
                           : q.kesimpulan_validitas == null
                             ? "bg-gray-100 text-gray-700"
                             : "bg-red-100 text-red-700"
@@ -556,7 +556,9 @@ export default function AnalisisAIPage() {
                   {/* Question Section */}
                   <div className="p-4 border-b border-gray-200">
                     <div
-                      className="prose font-bold mb-3"
+                      className={`prose mb-3 ${ // <-- Hapus font-bold dari sini
+                        q.showSuggestion ? 'font-bold text-blue-600' : '' // <-- Tambahkan logic ini
+                        }`}
                       dangerouslySetInnerHTML={{ __html: q.showSuggestion && q.ai_suggestion_question ? q.ai_suggestion_question : q.text }}
                     />
                     {q.options && q.options.length > 0 && (
@@ -566,7 +568,16 @@ export default function AnalisisAIPage() {
                         </p>
                         <div className="space-y-1">
                           {(q.showSuggestion && q.ai_suggestion_options && q.ai_suggestion_options.length > 0 ? q.ai_suggestion_options : q.options).map((option, idx) => (
-                            <div key={`${q.id}-option-${idx}`} className={`text-sm ${option.is_right ? 'font-bold' : ''}`}>
+                            <div
+                              key={`${q.id}-option-${idx}`}
+                              className={`text-sm ${
+                                // Teks akan tebal JIKA itu adalah kunci jawaban ATAU JIKA sedang mode lihat saran
+                                (option.is_right || q.showSuggestion) ? 'font-bold' : ''
+                                } ${
+                                // Tambah warna biru JIKA sedang mode lihat saran
+                                q.showSuggestion ? 'text-blue-600' : ''
+                                }`}
+                            >
                               {option.option_code}. {option.text}
                               {option.is_right ? <span className="text-green-600 ml-2">(Kunci Jawaban)</span> : null}
                             </div>
@@ -577,7 +588,7 @@ export default function AnalisisAIPage() {
                   </div>
 
                   {/* Analysis Section - Show only if suggestion exists and not applied */}
-                  {suggestion && q.ai_validation_result  && !appliedSuggestions[q.id] && (
+                  {suggestion && q.ai_validation_result && !appliedSuggestions[q.id] && (
                     <div className="p-4 bg-gray-50">
                       <div className="flex justify-between items-start mb-4">
                         <h4 className="text-lg font-medium">Hasil Analisis</h4>
@@ -594,11 +605,10 @@ export default function AnalisisAIPage() {
                                     )
                                   );
                                 }}
-                                className={`px-2 py-1 text-xs rounded transition-colors font-semibold ${
-                                  q.showSuggestion
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                                }`}
+                                className={`px-2 py-1 text-xs rounded transition-colors font-semibold ${q.showSuggestion
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                                  }`}
                               >
                                 {q.showSuggestion ? "Tutup Saran" : "Lihat Saran"}
                               </button>
@@ -626,7 +636,7 @@ export default function AnalisisAIPage() {
                           <span className="text-sm font-medium text-gray-700">
                             Status Validitas:
                           </span>
-                          
+
                           <p
                             className={`text-sm mt-1 font-medium ${q.kesimpulan_validitas === "Valid"
                               ? "text-green-600"
