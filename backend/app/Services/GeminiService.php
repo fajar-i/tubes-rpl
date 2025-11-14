@@ -165,17 +165,7 @@ class GeminiService
             ]);
 
 
-            if ($response->failed() || $response->status() !== 200) {
-                Log::error('Gemini API failed with status: ' . $response->status());
-                Log::error('Error response: ' . $response->body());
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Analisis gagal: Kuota layanan AI telah habis.',
-                    'source_error' => [ // Opsional: kirim info error untuk debug
-                        'message' => $response->body()
-                    ]
-                ], $response->status()); // <-- Kirim HTTP Status 429 (Too Many Requests)
-            }
+        
 
             $json = $response->json();
 

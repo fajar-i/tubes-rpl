@@ -50,67 +50,59 @@ export default function AnalisisAIPage() {
         rata_rata_skor: question.rata_rata_skor,
         bloom_taxonomy: question.bloom_taxonomy,
         note: question.note,
-        
       };
 
-      // Update question text in database
-      if (question.ai_suggestion_question) {
-        await AxiosInstance.put(
-          `/questions/${question.id}`,
-          { text: question.ai_suggestion_question, ai_validation_result: null },
-          { headers: { Authorization: `Bearer ${authToken}` } }
-        );
-      }
-
-      // Update options if they exist
+      // Prepare options for update
+      let optionsToUpdate = question.options || [];
       if (
         question.ai_suggestion_options &&
         question.ai_suggestion_options.length > 0
       ) {
-        const updateOptionPromises = question.ai_suggestion_options.map(
-          (option, index) => {
-            if (question.options && question.options[index]) {
-              // Update local options data with both text and is_right
-              if (updatedQuestion.options && updatedQuestion.options[index]) {
-                updatedQuestion.options[index].text = option.text;
-                updatedQuestion.options[index].is_right = option.is_right || false;
-              }
-
-              // Update text
-              const updateTextPromise = AxiosInstance.put(
-                `/options/${question.options[index].id}`,
-                {
-                  text: option.text,
-                },
-                { headers: { Authorization: `Bearer ${authToken}` } }
-              );
-
-              // Update is_right using the dedicated endpoint
-              const updateIsRightPromise = option.is_right
-                ? AxiosInstance.put(
-                  `/rightOption/${question.options[index].id}`,
-                  {},
-                  { headers: { Authorization: `Bearer ${authToken}` } }
-                )
-                : Promise.resolve();
-
-              return Promise.all([updateTextPromise, updateIsRightPromise]);
-            }
-            return null;
-          }
-        );
-
-        await Promise.all(updateOptionPromises.filter((p) => p !== null));
+        optionsToUpdate = question.ai_suggestion_options.map((aiOption) => ({
+          option_code: aiOption.option_code,
+          text: aiOption.text,
+          is_right: aiOption.is_right,
+        }));
       }
 
-      // Update local state with the modified question while preserving other questions and their suggestion states
-      setQuestions(
-        questions.map((q) =>
-          q.id === question.id
-            ? { ...updatedQuestion, showSuggestion: false }
-            : { ...q } // Keep existing suggestion state for other questions
-        )
+      // Update question text and options in database
+      await AxiosInstance.put(
+        `/questions/${question.id}`,
+        { 
+          text: question.ai_suggestion_question || question.text,
+          ai_validation_result: null,
+          options: optionsToUpdate,
+        },
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
+
+      // Refresh the updated question from backend
+      const refreshResponse = await AxiosInstance.get(`/projects/${projectId}/questions`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      const refreshedQuestionsData = (refreshResponse.data.questions || []).map((q: AIResultType) => {
+        if (q.ai_validation_result && Object.keys(q.ai_validation_result).length > 0) {
+          const savedAnalysis = q.ai_validation_result;
+          return {
+            ...q,
+            showSuggestion: false,
+            kesimpulan_validitas: savedAnalysis.kesimpulan_validitas || "Tidak Valid",
+            skor: savedAnalysis.skor || defaultScores,
+            rata_rata_skor: savedAnalysis.rata_rata_skor || 0,
+            note: savedAnalysis.note || null,
+            bloom_taxonomy: savedAnalysis.bloom_taxonomy || null,
+            ai_suggestion_question: savedAnalysis.ai_suggestion_question || null,
+            ai_suggestion_options: savedAnalysis.ai_suggestion_options || [],
+          };
+        }
+        return {
+          ...q,
+          showSuggestion: false,
+        };
+      });
+
+      setQuestions(refreshedQuestionsData);
 
       // Mark this question's suggestion as applied
       setAppliedSuggestions(prev => ({
@@ -266,12 +258,41 @@ export default function AnalisisAIPage() {
 
       setQuestions(updatedQuestions);
       setSuggestion("completed");
+      
       // Open all questions on first validation
       const newExpandedState: { [key: number]: boolean } = {};
       updatedQuestions.forEach((q) => {
         newExpandedState[q.id] = true;
       });
       setExpandedQuestions(newExpandedState);
+      
+      // Refresh all questions from backend after validation
+      const refreshResponse = await AxiosInstance.get(`/projects/${projectId}/questions`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      const refreshedQuestionsData = (refreshResponse.data.questions || []).map((q: AIResultType) => {
+        if (q.ai_validation_result && Object.keys(q.ai_validation_result).length > 0) {
+          const savedAnalysis = q.ai_validation_result;
+          return {
+            ...q,
+            showSuggestion: false,
+            kesimpulan_validitas: savedAnalysis.kesimpulan_validitas || "Tidak Valid",
+            skor: savedAnalysis.skor || defaultScores,
+            rata_rata_skor: savedAnalysis.rata_rata_skor || 0,
+            note: savedAnalysis.note || null,
+            bloom_taxonomy: savedAnalysis.bloom_taxonomy || null,
+            ai_suggestion_question: savedAnalysis.ai_suggestion_question || null,
+            ai_suggestion_options: savedAnalysis.ai_suggestion_options || [],
+          };
+        }
+        return {
+          ...q,
+          showSuggestion: false,
+        };
+      });
+
+      setQuestions(refreshedQuestionsData);
       toast.success("Analisis materi berhasil dilakukan");
     } catch (err) {
       console.error("Gagal menganalisis:", err);

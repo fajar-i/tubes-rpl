@@ -184,6 +184,10 @@ class QuestionController extends Controller
         $request->validate([
             "text" => "required",
             "ai_validation_result" => "nullable",
+            "options" => "nullable|array",
+            "options.*.option_code" => "required|string",
+            "options.*.text" => "required|string",
+            "options.*.is_right" => "required|boolean",
         ]);
 
         $data = [];
@@ -195,6 +199,41 @@ class QuestionController extends Controller
         }
 
         $question->update($data);
+
+        // Handle options update/creation
+        if ($request->has('options') && is_array($request->options)) {
+            // Get existing options
+            $existingOptions = $question->options()->get();
+            $requestOptionCodes = array_column($request->options, 'option_code');
+
+            // Delete options that are not in the request
+            foreach ($existingOptions as $existingOption) {
+                if (!in_array($existingOption->option_code, $requestOptionCodes)) {
+                    $existingOption->delete();
+                }
+            }
+
+            // Update or create options
+            foreach ($request->options as $optionData) {
+                $existingOption = $existingOptions->firstWhere('option_code', $optionData['option_code']);
+
+                if ($existingOption) {
+                    // Update existing option
+                    $existingOption->update([
+                        'text' => $optionData['text'],
+                        'is_right' => $optionData['is_right'],
+                    ]);
+                } else {
+                    // Create new option
+                    $question->options()->create([
+                        'text' => $optionData['text'],
+                        'option_code' => $optionData['option_code'],
+                        'is_right' => $optionData['is_right'],
+                    ]);
+                }
+            }
+        }
+
         return response()->json([
             "status" => true,
             "message" => "question updated succesfully",
